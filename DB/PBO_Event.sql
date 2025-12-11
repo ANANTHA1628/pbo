@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS peserta;
 CREATE TABLE karyawan (
     id SERIAL PRIMARY KEY,
     nama VARCHAR(100) NOT NULL,
+    alamt TEXT,
     kontak VARCHAR(20)
 );
 

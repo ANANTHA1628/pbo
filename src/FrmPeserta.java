@@ -1,4 +1,7 @@
 import javax.swing.*;
+
+import backend.Koneksi;
+
 import java.awt.*;
 import java.sql.*;
 
