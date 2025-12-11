@@ -11,7 +11,7 @@ DROP TABLE IF EXISTS peserta;
 CREATE TABLE karyawan (
     id SERIAL PRIMARY KEY,
     nama VARCHAR(100) NOT NULL,
-    alamt TEXT,
+    alamat TEXT,
     kontak VARCHAR(20)
 );
 
@@ -36,6 +36,8 @@ CREATE TABLE event (
     id SERIAL PRIMARY KEY,
     nama_event VARCHAR(100) NOT NULL,
     tanggal DATE NOT NULL,
+    pool_prize BIGINT DEFAULT 0,
+    harga_registrasi BIGINT DEFAULT 0,
     venue_id INT, -- Relasi ke Venue
     CONSTRAINT fk_event_venue FOREIGN KEY (venue_id) REFERENCES venue(id)
 );

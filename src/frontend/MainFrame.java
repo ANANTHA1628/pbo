@@ -1,3 +1,4 @@
+package frontend;
 import java.awt.*;
 import javax.swing.*;
 
@@ -17,7 +18,7 @@ public class MainFrame extends JFrame {
         JButton btnPanitia = new JButton("5. FrmPanitia");
         JButton btnPeserta = new JButton("6. FrmPeserta");
 
-        Navigasi ke Form Lain (Nama Class SUDAH DISESUAIKAN)
+        //Navigasi ke Form Lain (Nama Class SUDAH DISESUAIKAN)
         btnKaryawan.addActionListener(e -> new FrmKaryawan().setVisible(true));
         btnVenue.addActionListener(e -> new FrmVenue().setVisible(true));
         btnEvent.addActionListener(e -> new FrmEvent().setVisible(true));
