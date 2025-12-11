@@ -1,64 +1,106 @@
-import javax.swing.*;
-
-import backend.Koneksi;
-
+import backend.PesertaBackend;
 import java.awt.*;
-import java.sql.*;
+import java.util.ArrayList;
+import javax.swing.*;
 
 public class FrmPeserta extends JFrame {
     JComboBox<ComboItem> cmbEvent;
-    JTextField txtNama, txtEmail, txtHp;
+    JTextField txtNama, txtAsal, txtHp;
+    JRadioButton rbManual, rbImport;
+    JButton btnDaftar, btnImport;
+    PesertaBackend backend;
 
     public FrmPeserta() {
-        setTitle("Form Peserta"); setSize(400, 350);
-        setLocationRelativeTo(null); setLayout(new GridLayout(5, 2));
+        backend = new PesertaBackend();
+        setTitle("Form Peserta");
+        setSize(500, 400);
+        setLocationRelativeTo(null);
+        setLayout(new GridLayout(8, 2));
 
-        add(new JLabel("Pilih Event:")); cmbEvent = new JComboBox<>(); add(cmbEvent);
-        add(new JLabel("Nama Peserta:")); txtNama = new JTextField(); add(txtNama);
-        add(new JLabel("Email:")); txtEmail = new JTextField(); add(txtEmail);
-        add(new JLabel("No HP:")); txtHp = new JTextField(); add(txtHp);
-        JButton btn = new JButton("Daftar"); add(new JLabel("")); add(btn);
+        add(new JLabel("Pilih Event:"));
+        cmbEvent = new JComboBox<>();
+        add(cmbEvent);
+
+        add(new JLabel("Pilihan Input:"));
+        JPanel panelRadio = new JPanel();
+        rbManual = new JRadioButton("Manual", true);
+        rbImport = new JRadioButton("Import CSV");
+        ButtonGroup bg = new ButtonGroup();
+        bg.add(rbManual);
+        bg.add(rbImport);
+        panelRadio.add(rbManual);
+        panelRadio.add(rbImport);
+        add(panelRadio);
+
+        add(new JLabel("Nama Peserta:"));
+        txtNama = new JTextField();
+        add(txtNama);
+
+        add(new JLabel("Asal:"));
+        txtAsal = new JTextField();
+        add(txtAsal);
+
+        add(new JLabel("No HP:"));
+        txtHp = new JTextField();
+        add(txtHp);
+
+        btnDaftar = new JButton("Daftar");
+        add(btnDaftar);
+
+        btnImport = new JButton("Pilih File CSV");
+        add(btnImport);
 
         loadEvent();
-        btn.addActionListener(e -> daftar());
+        setupListeners();
     }
 
     void loadEvent() {
-        try {
-            ResultSet rs = Koneksi.getKoneksi().createStatement().executeQuery("SELECT id, nama_event FROM event");
-            while(rs.next()) cmbEvent.addItem(new ComboItem(rs.getString("nama_event"), rs.getInt("id")));
-        } catch (Exception e) {}
+        ArrayList<Object[]> events = backend.getListEvent();
+        for (Object[] event : events) {
+            cmbEvent.addItem(new ComboItem((String) event[1], (Integer) event[0]));
+        }
     }
 
-    void daftar() {
-        Connection c = null;
-        try {
-            c = Koneksi.getKoneksi();
-            c.setAutoCommit(false); 
+    void setupListeners() {
+        rbManual.addActionListener(e -> toggleInputMode(true));
+        rbImport.addActionListener(e -> toggleInputMode(false));
 
-            // 1. Simpan Peserta
-            PreparedStatement ps1 = c.prepareStatement("INSERT INTO peserta (nama_peserta, email, no_hp) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
-            ps1.setString(1, txtNama.getText());
-            ps1.setString(2, txtEmail.getText());
-            ps1.setString(3, txtHp.getText());
-            ps1.executeUpdate();
+        btnDaftar.addActionListener(e -> daftarManual());
+        btnImport.addActionListener(e -> importCSV());
+    }
 
-            ResultSet rs = ps1.getGeneratedKeys();
-            int idPeserta = 0;
-            if (rs.next()) idPeserta = rs.getInt(1);
+    void toggleInputMode(boolean manual) {
+        txtNama.setEnabled(manual);
+        txtAsal.setEnabled(manual);
+        txtHp.setEnabled(manual);
+        btnDaftar.setEnabled(manual);
+        btnImport.setEnabled(!manual);
+    }
 
-            // 2. Hubungkan ke Event
-            PreparedStatement ps2 = c.prepareStatement("INSERT INTO event_peserta (event_id, peserta_id) VALUES (?, ?)");
-            ps2.setInt(1, ((ComboItem) cmbEvent.getSelectedItem()).getValue());
-            ps2.setInt(2, idPeserta);
-            ps2.executeUpdate();
+    void daftarManual() {
+        String nama = txtNama.getText();
+        String asal = txtAsal.getText();
+        String hp = txtHp.getText();
+        int eventId = ((ComboItem) cmbEvent.getSelectedItem()).getValue();
 
-            c.commit(); 
+        if (backend.simpanPesertaManual(nama, asal, hp, eventId)) {
             JOptionPane.showMessageDialog(this, "Berhasil Daftar!");
-            txtNama.setText(""); txtEmail.setText(""); txtHp.setText("");
-        } catch (Exception e) {
-            try { if (c != null) c.rollback(); } catch (Exception ex) {}
-            JOptionPane.showMessageDialog(this, "Gagal: " + e.getMessage());
+            txtNama.setText("");
+            txtAsal.setText("");
+            txtHp.setText("");
+        }
+    }
+
+    void importCSV() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("CSV Files", "csv"));
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            String filePath = chooser.getSelectedFile().getAbsolutePath();
+            int eventId = ((ComboItem) cmbEvent.getSelectedItem()).getValue();
+
+            if (backend.importPesertaDariCSV(filePath, eventId)) {
+                JOptionPane.showMessageDialog(this, "Berhasil Import!");
+            }
         }
     }
 }
