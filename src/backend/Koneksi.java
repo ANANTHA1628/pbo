@@ -12,7 +12,7 @@ public class Koneksi {
             try {
                 String url = "jdbc:postgresql://localhost:5432/PBO_Event";
                 String user = "postgres";
-                String password = "nanta"; 
+                String password = "raihan100"; 
                 
                 Class.forName("org.postgresql.Driver");
                 koneksi = DriverManager.getConnection(url, user, password);
