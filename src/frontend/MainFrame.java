@@ -20,7 +20,7 @@ public class MainFrame extends JFrame {
 
         //Navigasi ke Form Lain (Nama Class SUDAH DISESUAIKAN)
         btnKaryawan.addActionListener(e -> new FrmKaryawan().setVisible(true));
-        // btnVenue.addActionListener(e -> new FrmVenue().setVisible(true));
+        btnVenue.addActionListener(e -> new FrmVenue().setVisible(true));
         btnEvent.addActionListener(e -> new FrmEvent().setVisible(true));
         btnJadwal.addActionListener(e -> new FrmJadwal().setVisible(true));
         btnPanitia.addActionListener(e -> new FrmPanitia().setVisible(true));
