@@ -7,32 +7,38 @@ import javax.swing.JOptionPane;
 public class KaryawanBackend {
     
     // --- 1. INSERT (Simpan) ---
-    public boolean simpanKaryawan(String nama, String alamat, String kontak) {
+    // Update parameter tambah 'keahlian'
+    public boolean simpanKaryawan(String nama, String alamat, String kontak, String keahlian) {
         try {
             Connection c = Koneksi.getKoneksi();
-            String sql = "INSERT INTO karyawan (nama, alamat, kontak) VALUES (?, ?, ?)";
+            // Update SQL Insert
+            String sql = "INSERT INTO karyawan (nama, alamat, kontak, keahlian) VALUES (?, ?, ?, ?)";
             PreparedStatement ps = c.prepareStatement(sql);
             ps.setString(1, nama);
             ps.setString(2, alamat);
             ps.setString(3, kontak);
+            ps.setString(4, keahlian); // Masukkan keahlian
             ps.executeUpdate();
-            return true; // Berhasil
+            return true; 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Error Backend Simpan: " + e.getMessage());
-            return false; // Gagal
+            return false; 
         }
     }
 
     // --- 2. UPDATE (Ubah) ---
-    public boolean ubahKaryawan(int id, String nama, String alamat, String kontak) {
+    // Update parameter tambah 'keahlian'
+    public boolean ubahKaryawan(int id, String nama, String alamat, String kontak, String keahlian) {
         try {
             Connection c = Koneksi.getKoneksi();
-            String sql = "UPDATE karyawan SET nama=?, alamat=?, kontak=? WHERE id=?";
+            // Update SQL Update
+            String sql = "UPDATE karyawan SET nama=?, alamat=?, kontak=?, keahlian=? WHERE id=?";
             PreparedStatement ps = c.prepareStatement(sql);
             ps.setString(1, nama);
             ps.setString(2, alamat);
             ps.setString(3, kontak);
-            ps.setInt(4, id);
+            ps.setString(4, keahlian); // Update keahlian
+            ps.setInt(5, id);
             ps.executeUpdate();
             return true;
         } catch (Exception e) {
@@ -57,7 +63,6 @@ public class KaryawanBackend {
     }
 
     // --- 4. READ & SEARCH (Ambil Data) ---
-    // Kita kembalikan data dalam bentuk ArrayList agar bisa dipakai GUI
     public ArrayList<Object[]> getListKaryawan(String keyword) {
         ArrayList<Object[]> dataList = new ArrayList<>();
         try {
@@ -76,12 +81,12 @@ public class KaryawanBackend {
 
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                // Bungkus baris data ke dalam Object Array
                 Object[] baris = {
                     rs.getInt("id"),
                     rs.getString("nama"),
                     rs.getString("alamat"),
-                    rs.getString("kontak")
+                    rs.getString("kontak"),
+                    rs.getString("keahlian") // Ambil kolom keahlian
                 };
                 dataList.add(baris);
             }
