@@ -1,6 +1,5 @@
 package frontend;
 import backend.PesertaBackend;
-
 import java.awt.*;
 import java.util.ArrayList;
 import javax.swing.*;
@@ -80,6 +79,10 @@ public class FrmPeserta extends JFrame {
     }
 
     void daftarManual() {
+        if (cmbEvent.getSelectedItem() == null) {
+            JOptionPane.showMessageDialog(this, "Pilih event terlebih dahulu!");
+            return;
+        }
         String nama = txtNama.getText();
         String asal = txtAsal.getText();
         String hp = txtHp.getText();
@@ -94,6 +97,10 @@ public class FrmPeserta extends JFrame {
     }
 
     void importCSV() {
+        if (cmbEvent.getSelectedItem() == null) {
+            JOptionPane.showMessageDialog(this, "Pilih event terlebih dahulu!");
+            return;
+        }
         JFileChooser chooser = new JFileChooser();
         chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("CSV Files", "csv"));
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
