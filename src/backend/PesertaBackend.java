@@ -7,15 +7,15 @@ import javax.swing.JOptionPane;
 
 public class PesertaBackend {
 
-    public boolean simpanPesertaManual(String nama, String asal, String noHp, int eventId) {
+    public boolean simpanPesertaManual(String nama, String email, String noHp, int eventId) {
         Connection c = null;
         try {
             c = Koneksi.getKoneksi();
             c.setAutoCommit(false);
 
-            PreparedStatement ps1 = c.prepareStatement("INSERT INTO peserta (nama_peserta, asal, no_hp) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps1 = c.prepareStatement("INSERT INTO peserta (nama_peserta, email, no_hp) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
             ps1.setString(1, nama);
-            ps1.setString(2, asal);
+            ps1.setString(2, email);
             ps1.setString(3, noHp);
             ps1.executeUpdate();
 
@@ -57,12 +57,12 @@ public class PesertaBackend {
                 String[] data = line.split(",");
                 if (data.length >= 3) {
                     String nama = data[0].trim();
-                    String asal = data[1].trim();
+                    String email = data[1].trim();
                     String noHp = data[2].trim();
 
-                    PreparedStatement ps1 = c.prepareStatement("INSERT INTO peserta (nama_peserta, asal, no_hp) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+                    PreparedStatement ps1 = c.prepareStatement("INSERT INTO peserta (nama_peserta, email, no_hp) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
                     ps1.setString(1, nama);
-                    ps1.setString(2, asal);
+                    ps1.setString(2, email);
                     ps1.setString(3, noHp);
                     ps1.executeUpdate();
 

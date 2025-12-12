@@ -6,7 +6,7 @@ import javax.swing.*;
 
 public class FrmPeserta extends JFrame {
     JComboBox<ComboItem> cmbEvent;
-    JTextField txtNama, txtAsal, txtHp;
+    JTextField txtNama, txtEmail, txtHp;
     JRadioButton rbManual, rbImport;
     JButton btnDaftar, btnImport;
     PesertaBackend backend;
@@ -37,9 +37,9 @@ public class FrmPeserta extends JFrame {
         txtNama = new JTextField();
         add(txtNama);
 
-        add(new JLabel("Asal:"));
-        txtAsal = new JTextField();
-        add(txtAsal);
+        add(new JLabel("Email:"));
+        txtEmail = new JTextField();
+        add(txtEmail);
 
         add(new JLabel("No HP:"));
         txtHp = new JTextField();
@@ -72,7 +72,7 @@ public class FrmPeserta extends JFrame {
 
     void toggleInputMode(boolean manual) {
         txtNama.setEnabled(manual);
-        txtAsal.setEnabled(manual);
+        txtEmail.setEnabled(manual);
         txtHp.setEnabled(manual);
         btnDaftar.setEnabled(manual);
         btnImport.setEnabled(!manual);
@@ -84,14 +84,14 @@ public class FrmPeserta extends JFrame {
             return;
         }
         String nama = txtNama.getText();
-        String asal = txtAsal.getText();
+        String email = txtEmail.getText();
         String hp = txtHp.getText();
         int eventId = ((ComboItem) cmbEvent.getSelectedItem()).getValue();
 
-        if (backend.simpanPesertaManual(nama, asal, hp, eventId)) {
+        if (backend.simpanPesertaManual(nama, email, hp, eventId)) {
             JOptionPane.showMessageDialog(this, "Berhasil Daftar!");
             txtNama.setText("");
-            txtAsal.setText("");
+            txtEmail.setText("");
             txtHp.setText("");
         }
     }
