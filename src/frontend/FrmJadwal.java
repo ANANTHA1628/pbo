@@ -1,4 +1,5 @@
 package frontend;
+
 import backend.JadwalBackend;
 import backend.JadwalBackend.EventItem;
 import backend.JadwalBackend.Jadwal;
@@ -9,25 +10,37 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
+/**
+ * Class FrmJadwal
+ * Deskripsi: Form untuk mengelola Jadwal (Rundown) acara untuk event tertentu.
+ * Memungkinkan user untuk menetapkan jam mulai, jam selesai, dan pengisi acara.
+ */
 public class FrmJadwal extends JFrame {
+
+    // --- Komponen GUI ---
     JComboBox<EventItem> cmbEvent;
     JTextField txtAgenda, txtPengisi, txtMulai, txtSelesai, txtSearch;
     DefaultTableModel model;
     JTable table;
+
+    // --- Initialisasi Backend ---
     JadwalBackend dao = new JadwalBackend();
-    int selectedRow = -1;
-    int selectedId = -1;
+
+    // --- Variabel State ---
+    int selectedRow = -1; // Baris tabel yang dipilih
+    int selectedId = -1; // ID Jadwal dari baris terpilih
 
     public FrmJadwal() {
-        setTitle("Form Jadwal");
+        setTitle("Form Kelola Jadwal Event");
         setSize(900, 600);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Panel Input
+        // 1. Panel Input Data (Bagian Atas)
         JPanel pInput = new JPanel(new GridLayout(6, 2, 5, 5));
-        pInput.setBorder(BorderFactory.createTitledBorder("Input Data"));
+        pInput.setBorder(BorderFactory.createTitledBorder("Input Data Jadwal"));
+
         pInput.add(new JLabel("Pilih Event:"));
         cmbEvent = new JComboBox<>();
         pInput.add(cmbEvent);
@@ -48,13 +61,17 @@ public class FrmJadwal extends JFrame {
         txtSelesai = new JTextField();
         pInput.add(txtSelesai);
 
+        // Panel Tombol Aksi
         JPanel pBtn = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
         JButton btnSimpan = new JButton("Simpan");
         JButton btnHapus = new JButton("Hapus");
         JButton btnReset = new JButton("Reset");
+
+        // Listener Tombol
         btnSimpan.addActionListener(e -> simpan());
         btnHapus.addActionListener(e -> hapus());
         btnReset.addActionListener(e -> reset());
+
         pBtn.add(btnSimpan);
         pBtn.add(btnHapus);
         pBtn.add(btnReset);
@@ -64,17 +81,19 @@ public class FrmJadwal extends JFrame {
         pTop.add(pInput, BorderLayout.CENTER);
         add(pTop, BorderLayout.NORTH);
 
-        // Panel Search
+        // 2. Panel Pencarian (Bagian Bawah)
         JPanel pSearch = new JPanel(new BorderLayout(5, 5));
         pSearch.setBorder(BorderFactory.createTitledBorder("Pencarian"));
         pSearch.add(new JLabel("Cari Data:"), BorderLayout.WEST);
+
         txtSearch = new JTextField();
         txtSearch.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent e) {
-                cari();
+                cari(); // Live search saat mengetik
             }
         });
         pSearch.add(txtSearch, BorderLayout.CENTER);
+
         JButton btnClear = new JButton("Bersihkan");
         btnClear.addActionListener(e -> {
             txtSearch.setText("");
@@ -83,11 +102,12 @@ public class FrmJadwal extends JFrame {
         pSearch.add(btnClear, BorderLayout.EAST);
         add(pSearch, BorderLayout.SOUTH);
 
-        // Table
-        model = new DefaultTableModel(new String[]{"ID", "Event", "Agenda", "Pengisi Acara", "Jam Mulai", "Jam Selesai"}, 0) {
+        // 3. Tabel Data (Bagian Tengah)
+        model = new DefaultTableModel(
+                new String[] { "ID", "Event", "Agenda", "Pengisi Acara", "Jam Mulai", "Jam Selesai" }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                return false; // Cell tidak bisa diedit langsung
             }
         };
         table = new JTable(model);
@@ -95,15 +115,17 @@ public class FrmJadwal extends JFrame {
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                pilihBaris();
+                pilihBaris(); // Load data ke form saat baris diklik
             }
         });
         add(new JScrollPane(table), BorderLayout.CENTER);
 
+        // Load data awal
         loadEvent();
         loadData();
     }
 
+    // Mengambil daftar event untuk ComboBox
     void loadEvent() {
         try {
             List<EventItem> events = dao.getAllEvent();
@@ -112,47 +134,50 @@ public class FrmJadwal extends JFrame {
                 cmbEvent.addItem(e);
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Gagal memuat event: " + e.getMessage());
         }
     }
 
+    // Mengambil semua data jadwal dari database
     void loadData() {
         try {
             model.setRowCount(0);
             List<Jadwal> jadwals = dao.getAllJadwal();
             for (Jadwal j : jadwals) {
-                model.addRow(new Object[]{j.id, j.nama_event, j.nama_agenda, j.pengisi_acara, j.waktu_mulai, j.waktu_selesai});
+                model.addRow(new Object[] { j.id, j.nama_event, j.nama_agenda, j.pengisi_acara, j.waktu_mulai,
+                        j.waktu_selesai });
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Gagal memuat data: " + e.getMessage());
         }
     }
 
+    // Mencari jadwal berdasarkan keyword
     void cari() {
         try {
             String keyword = txtSearch.getText().trim();
             model.setRowCount(0);
-            
+
             if (keyword.isEmpty()) {
                 loadData();
                 return;
             }
-            
+
             List<Jadwal> jadwals = dao.searchJadwal(keyword);
             if (jadwals.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Data tidak ditemukan!");
-                loadData();
-                return;
+                return; // Jangan tampilkan pesan error saat mengetik, cukup kosongkan atau biarkan
             }
-            
+
             for (Jadwal j : jadwals) {
-                model.addRow(new Object[]{j.id, j.nama_event, j.nama_agenda, j.pengisi_acara, j.waktu_mulai, j.waktu_selesai});
+                model.addRow(new Object[] { j.id, j.nama_event, j.nama_agenda, j.pengisi_acara, j.waktu_mulai,
+                        j.waktu_selesai });
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error saat mencari: " + e.getMessage());
         }
     }
 
+    // Mengisi form input dari data tabel yang dipilih
     void pilihBaris() {
         selectedRow = table.getSelectedRow();
         if (selectedRow >= 0) {
@@ -160,7 +185,7 @@ public class FrmJadwal extends JFrame {
             try {
                 Jadwal j = dao.getJadwalById(selectedId);
                 if (j != null) {
-                    // Set combo box sesuai event_id
+                    // Set combobox event yang sesuai
                     for (int i = 0; i < cmbEvent.getItemCount(); i++) {
                         if (cmbEvent.getItemAt(i).id == j.event_id) {
                             cmbEvent.setSelectedIndex(i);
@@ -173,62 +198,66 @@ public class FrmJadwal extends JFrame {
                     txtSelesai.setText(j.waktu_selesai);
                 }
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+                JOptionPane.showMessageDialog(this, "Gagal mengambil detail: " + e.getMessage());
             }
         }
     }
 
+    // Menyimpan data (Insert atau Update)
     void simpan() {
         try {
             if (txtAgenda.getText().isEmpty() || txtPengisi.getText().isEmpty() ||
-                txtMulai.getText().isEmpty() || txtSelesai.getText().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Semua field harus diisi!");
+                    txtMulai.getText().isEmpty() || txtSelesai.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Semua kolom form harus diisi!");
                 return;
             }
 
             EventItem selected = (EventItem) cmbEvent.getSelectedItem();
             if (selected == null) {
-                JOptionPane.showMessageDialog(this, "Pilih event terlebih dahulu!");
+                JOptionPane.showMessageDialog(this, "Harap pilih event terlebih dahulu!");
                 return;
             }
 
             if (selectedId == -1) {
-                // Insert
+                // Proses Insert Data Baru
                 dao.insertJadwal(selected.id, txtAgenda.getText(), txtPengisi.getText(),
                         txtMulai.getText(), txtSelesai.getText());
-                JOptionPane.showMessageDialog(this, "Data berhasil disimpan!");
+                JOptionPane.showMessageDialog(this, "Jadwal berhasil disimpan!");
             } else {
-                // Update
+                // Proses Update Data Lama
                 dao.updateJadwal(selectedId, selected.id, txtAgenda.getText(), txtPengisi.getText(),
                         txtMulai.getText(), txtSelesai.getText());
-                JOptionPane.showMessageDialog(this, "Data berhasil diperbarui!");
+                JOptionPane.showMessageDialog(this, "Jadwal berhasil diperbarui!");
             }
             reset();
             loadData();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Gagal menyimpan: " + e.getMessage());
         }
     }
 
+    // Menghapus data jadwal
     void hapus() {
         if (selectedId == -1) {
-            JOptionPane.showMessageDialog(this, "Pilih data yang ingin dihapus!");
+            JOptionPane.showMessageDialog(this, "Silakan pilih jadwal yang akan dihapus dari tabel!");
             return;
         }
 
-        int confirm = JOptionPane.showConfirmDialog(this, "Yakin ingin menghapus data ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Yakin ingin menghapus jadwal ini?", "Konfirmasi Hapus",
+                JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 dao.deleteJadwal(selectedId);
-                JOptionPane.showMessageDialog(this, "Data berhasil dihapus!");
+                JOptionPane.showMessageDialog(this, "Jadwal berhasil dihapus!");
                 reset();
                 loadData();
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+                JOptionPane.showMessageDialog(this, "Gagal menghapus: " + e.getMessage());
             }
         }
     }
 
+    // Mereset form input ke kondisi awal
     void reset() {
         cmbEvent.setSelectedIndex(0);
         txtAgenda.setText("");
