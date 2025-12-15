@@ -3,26 +3,34 @@ import backend.PesertaBackend;
 import java.awt.*;
 import java.util.ArrayList;
 import javax.swing.*;
+import javax.swing.table.*;
+import java.awt.*;
 
 public class FrmPeserta extends JFrame {
     JComboBox<ComboItem> cmbEvent;
     JTextField txtNama, txtEmail, txtHp;
     JRadioButton rbManual, rbImport;
-    JButton btnDaftar, btnImport;
+    JButton btnDaftar, btnImport, btnRefresh;
+    JTable tblPeserta;
+    DefaultTableModel tableModel;
     PesertaBackend backend;
 
     public FrmPeserta() {
         backend = new PesertaBackend();
         setTitle("Form Peserta");
-        setSize(500, 400);
+        setSize(800, 600);
         setLocationRelativeTo(null);
-        setLayout(new GridLayout(8, 2));
+        setLayout(new BorderLayout());
+        
+        // Panel untuk form input
+        JPanel inputPanel = new JPanel(new GridLayout(6, 2, 5, 5));
+        inputPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        add(new JLabel("Pilih Event:"));
+        inputPanel.add(new JLabel("Pilih Event:"));
         cmbEvent = new JComboBox<>();
-        add(cmbEvent);
+        inputPanel.add(cmbEvent);
 
-        add(new JLabel("Pilihan Input:"));
+        inputPanel.add(new JLabel("Pilihan Input:"));
         JPanel panelRadio = new JPanel();
         rbManual = new JRadioButton("Manual", true);
         rbImport = new JRadioButton("Import CSV");
@@ -31,43 +39,89 @@ public class FrmPeserta extends JFrame {
         bg.add(rbImport);
         panelRadio.add(rbManual);
         panelRadio.add(rbImport);
-        add(panelRadio);
+        inputPanel.add(panelRadio);
 
-        add(new JLabel("Nama Peserta:"));
+        inputPanel.add(new JLabel("Nama Peserta:"));
         txtNama = new JTextField();
-        add(txtNama);
+        inputPanel.add(txtNama);
 
-        add(new JLabel("Email:"));
+        inputPanel.add(new JLabel("Email:"));
         txtEmail = new JTextField();
-        add(txtEmail);
+        inputPanel.add(txtEmail);
 
-        add(new JLabel("No HP:"));
+        inputPanel.add(new JLabel("No HP:"));
         txtHp = new JTextField();
-        add(txtHp);
+        inputPanel.add(txtHp);
 
         btnDaftar = new JButton("Daftar");
-        add(btnDaftar);
+        inputPanel.add(btnDaftar);
 
         btnImport = new JButton("Pilih File CSV");
-        add(btnImport);
+        inputPanel.add(btnImport);
+        
+        // Panel untuk tabel
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        
+        // Membuat model tabel
+        String[] columnNames = {"ID", "Nama Peserta", "Email", "No HP", "Event"};
+        tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Membuat sel tidak bisa diedit
+            }
+        };
+        tblPeserta = new JTable(tableModel);
+        
+        // Mengatur lebar kolom
+        tblPeserta.getColumnModel().getColumn(0).setPreferredWidth(50);  // ID
+        tblPeserta.getColumnModel().getColumn(1).setPreferredWidth(150); // Nama
+        tblPeserta.getColumnModel().getColumn(2).setPreferredWidth(150); // Email
+        tblPeserta.getColumnModel().getColumn(3).setPreferredWidth(100); // No HP
+        tblPeserta.getColumnModel().getColumn(4).setPreferredWidth(150); // Nama Event
+        
+        // Menambahkan scroll pane untuk tabel
+        JScrollPane scrollPane = new JScrollPane(tblPeserta);
+        tablePanel.add(scrollPane, BorderLayout.CENTER);
+        
+        // Tombol refresh
+        btnRefresh = new JButton("Refresh Data");
+        btnRefresh.addActionListener(e -> refreshTable());
+        
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(btnRefresh);
+        
+        // Menambahkan komponen ke frame
+        add(inputPanel, BorderLayout.NORTH);
+        add(tablePanel, BorderLayout.CENTER);
+        add(buttonPanel, BorderLayout.SOUTH);
 
         loadEvent();
         setupListeners();
+        refreshTable();
     }
 
     void loadEvent() {
         ArrayList<Object[]> events = backend.getListEvent();
+        cmbEvent.removeAllItems();
         for (Object[] event : events) {
             cmbEvent.addItem(new ComboItem((String) event[1], (Integer) event[0]));
         }
+        // Add listener for event selection change
+        cmbEvent.addActionListener(e -> refreshTable());
     }
 
     void setupListeners() {
         rbManual.addActionListener(e -> toggleInputMode(true));
         rbImport.addActionListener(e -> toggleInputMode(false));
 
-        btnDaftar.addActionListener(e -> daftarManual());
-        btnImport.addActionListener(e -> importCSV());
+        btnDaftar.addActionListener(e -> {
+            daftarManual();
+            refreshTable(); // Refresh tabel setelah menambah data
+        });
+        btnImport.addActionListener(e -> {
+            importCSV();
+            refreshTable(); // Refresh tabel setelah import
+        });
     }
 
     void toggleInputMode(boolean manual) {
@@ -78,6 +132,28 @@ public class FrmPeserta extends JFrame {
         btnImport.setEnabled(!manual);
     }
 
+    void refreshTable() {
+        // Kosongkan tabel
+        tableModel.setRowCount(0);
+        
+        try {
+            if (cmbEvent.getSelectedItem() != null) {
+                int selectedEventId = ((ComboItem) cmbEvent.getSelectedItem()).getValue();
+                ArrayList<Object[]> dataPeserta = backend.getListPeserta(selectedEventId);
+                for (Object[] row : dataPeserta) {
+                    // Hanya ambil kolom yang diperlukan (ID, Nama, Email, No HP, Nama Event)
+                    Object[] rowData = {row[0], row[1], row[2], row[3], row[5]};
+                    tableModel.addRow(rowData);
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "Error memuat data: " + e.getMessage(), 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
     void daftarManual() {
         if (cmbEvent.getSelectedItem() == null) {
             JOptionPane.showMessageDialog(this, "Pilih event terlebih dahulu!");
