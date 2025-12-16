@@ -7,7 +7,7 @@ import javax.swing.JOptionPane;
 public class Koneksi {
     private static final String URL = "jdbc:postgresql://localhost:5432/PBO_Event";
     private static final String USER = "postgres";
-    private static final String PASSWORD = "nanta";
+    private static final String PASSWORD = "raihan100";
     private static Connection koneksi = null;
 
     public static Connection getKoneksi() {
