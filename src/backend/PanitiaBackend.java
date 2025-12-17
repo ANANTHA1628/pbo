@@ -20,15 +20,17 @@ public class PanitiaBackend {
         public String nama_event;
         public String nama_karyawan;
         public String jabatan;
+        public String keahlian;
 
         public Panitia(int id, int event_id, int karyawan_id, String nama_event,
-                String nama_karyawan, String jabatan) {
+                String nama_karyawan, String jabatan, String keahlian) {
             this.id = id;
             this.event_id = event_id;
             this.karyawan_id = karyawan_id;
             this.nama_event = nama_event;
             this.nama_karyawan = nama_karyawan;
             this.jabatan = jabatan;
+            this.keahlian = keahlian;
         }
     }
 
@@ -98,13 +100,14 @@ public class PanitiaBackend {
     public List<Panitia> getAllPanitia() throws Exception {
         List<Panitia> list = new ArrayList<>();
         try {
-            String sql = "SELECT p.id, p.event_id, p.karyawan_id, e.nama_event, k.nama, p.jabatan " +
+            String sql = "SELECT p.id, p.event_id, p.karyawan_id, e.nama_event, k.nama, p.jabatan, k.keahlian " +
                     "FROM panitia p JOIN event e ON p.event_id = e.id " +
                     "JOIN karyawan k ON p.karyawan_id = k.id ORDER BY p.id DESC";
             ResultSet rs = Koneksi.getKoneksi().createStatement().executeQuery(sql);
             while (rs.next()) {
                 list.add(new Panitia(rs.getInt("id"), rs.getInt("event_id"), rs.getInt("karyawan_id"),
-                        rs.getString("nama_event"), rs.getString("nama"), rs.getString("jabatan")));
+                        rs.getString("nama_event"), rs.getString("nama"), rs.getString("jabatan"),
+                        rs.getString("keahlian")));
             }
         } catch (Exception e) {
             throw new Exception("Error loading panitia: " + e.getMessage());
@@ -116,7 +119,7 @@ public class PanitiaBackend {
     public List<Panitia> searchPanitia(String keyword) throws Exception {
         List<Panitia> list = new ArrayList<>();
         try {
-            String sql = "SELECT p.id, p.event_id, p.karyawan_id, e.nama_event, k.nama, p.jabatan " +
+            String sql = "SELECT p.id, p.event_id, p.karyawan_id, e.nama_event, k.nama, p.jabatan, k.keahlian " +
                     "FROM panitia p JOIN event e ON p.event_id = e.id " +
                     "JOIN karyawan k ON p.karyawan_id = k.id " +
                     "WHERE LOWER(e.nama_event) LIKE LOWER(?) OR LOWER(k.nama) LIKE LOWER(?) OR LOWER(p.jabatan) LIKE LOWER(?) "
@@ -130,7 +133,8 @@ public class PanitiaBackend {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 list.add(new Panitia(rs.getInt("id"), rs.getInt("event_id"), rs.getInt("karyawan_id"),
-                        rs.getString("nama_event"), rs.getString("nama"), rs.getString("jabatan")));
+                        rs.getString("nama_event"), rs.getString("nama"), rs.getString("jabatan"),
+                        rs.getString("keahlian")));
             }
         } catch (Exception e) {
             throw new Exception("Error searching: " + e.getMessage());
@@ -182,7 +186,7 @@ public class PanitiaBackend {
     // Ambil detail satu data
     public Panitia getPanitiaById(int id) throws Exception {
         try {
-            String sql = "SELECT p.id, p.event_id, p.karyawan_id, e.nama_event, k.nama, p.jabatan " +
+            String sql = "SELECT p.id, p.event_id, p.karyawan_id, e.nama_event, k.nama, p.jabatan, k.keahlian " +
                     "FROM panitia p JOIN event e ON p.event_id = e.id " +
                     "JOIN karyawan k ON p.karyawan_id = k.id WHERE p.id=?";
             PreparedStatement ps = Koneksi.getKoneksi().prepareStatement(sql);
@@ -190,11 +194,34 @@ public class PanitiaBackend {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return new Panitia(rs.getInt("id"), rs.getInt("event_id"), rs.getInt("karyawan_id"),
-                        rs.getString("nama_event"), rs.getString("nama"), rs.getString("jabatan"));
+                        rs.getString("nama_event"), rs.getString("nama"), rs.getString("jabatan"),
+                        rs.getString("keahlian"));
             }
         } catch (Exception e) {
             throw new Exception("Error getting data: " + e.getMessage());
         }
         return null;
+    }
+
+    // Filter panitia berdasarkan event_id
+    public List<Panitia> getPanitiaByEventId(int eventId) throws Exception {
+        List<Panitia> list = new ArrayList<>();
+        try {
+            String sql = "SELECT p.id, p.event_id, p.karyawan_id, e.nama_event, k.nama, p.jabatan, k.keahlian " +
+                    "FROM panitia p JOIN event e ON p.event_id = e.id " +
+                    "JOIN karyawan k ON p.karyawan_id = k.id " +
+                    "WHERE p.event_id = ? ORDER BY p.id DESC";
+            PreparedStatement ps = Koneksi.getKoneksi().prepareStatement(sql);
+            ps.setInt(1, eventId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(new Panitia(rs.getInt("id"), rs.getInt("event_id"), rs.getInt("karyawan_id"),
+                        rs.getString("nama_event"), rs.getString("nama"), rs.getString("jabatan"),
+                        rs.getString("keahlian")));
+            }
+        } catch (Exception e) {
+            throw new Exception("Error filtering by event: " + e.getMessage());
+        }
+        return list;
     }
 }
