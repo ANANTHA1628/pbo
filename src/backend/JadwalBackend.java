@@ -70,7 +70,7 @@ public class JadwalBackend {
         try {
             String sql = "SELECT j.id, j.event_id, e.nama_event, j.nama_agenda, j.pengisi_acara, j.waktu_mulai, j.waktu_selesai "
                     +
-                    "FROM jadwal j JOIN event e ON j.event_id = e.id ORDER BY j.id DESC";
+                    "FROM jadwal j JOIN event e ON j.event_id = e.id ORDER BY j.waktu_mulai ASC";
             ResultSet rs = Koneksi.getKoneksi().createStatement().executeQuery(sql);
             while (rs.next()) {
                 list.add(new Jadwal(rs.getInt("id"), rs.getInt("event_id"), rs.getString("nama_event"),
@@ -92,7 +92,7 @@ public class JadwalBackend {
                     "FROM jadwal j JOIN event e ON j.event_id = e.id " +
                     "WHERE LOWER(e.nama_event) LIKE LOWER(?) OR LOWER(j.nama_agenda) LIKE LOWER(?) OR LOWER(j.pengisi_acara) LIKE LOWER(?) "
                     +
-                    "ORDER BY j.id DESC";
+                    "ORDER BY j.waktu_mulai ASC";
             PreparedStatement ps = Koneksi.getKoneksi().prepareStatement(sql);
             String param = "%" + keyword + "%";
             ps.setString(1, param);
