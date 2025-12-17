@@ -143,4 +143,53 @@ public class PesertaBackend {
         }
         return dataList;
     }
+    
+    public ArrayList<Object[]> getListPeserta(int eventId) {
+        ArrayList<Object[]> dataList = new ArrayList<>();
+        Connection c = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        
+        try {
+            c = Koneksi.getKoneksi();
+            if (c == null) {
+                JOptionPane.showMessageDialog(null, "Tidak dapat terhubung ke database. Periksa koneksi database Anda.", "Error Koneksi", JOptionPane.ERROR_MESSAGE);
+                return dataList;
+            }
+            
+            String sql = "SELECT p.id, p.nama_peserta, p.email, p.no_hp, ep.event_id, e.nama_event " +
+                        "FROM peserta p " +
+                        "JOIN event_peserta ep ON p.id = ep.peserta_id " +
+                        "JOIN event e ON ep.event_id = e.id " +
+                        "WHERE ep.event_id = ?";
+            
+            ps = c.prepareStatement(sql);
+            ps.setInt(1, eventId);
+            rs = ps.executeQuery();
+            
+            while (rs.next()) {
+                Object[] baris = {
+                    rs.getInt("id"),
+                    rs.getString("nama_peserta"),  // Diperbaiki dari nombre_peserta ke nama_peserta
+                    rs.getString("email"),
+                    rs.getString("no_hp"),
+                    rs.getInt("event_id"),
+                    rs.getString("nama_event")    // Diperbaiki dari nombre_evento ke nama_event
+                };
+                dataList.add(baris);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error Load Peserta: " + e.getMessage());
+            JOptionPane.showMessageDialog(null, 
+                "Gagal memuat data peserta: " + e.getMessage() + 
+                "\nPastikan tabel-tabel sudah ada di database.", 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+        } finally {
+            try { if (rs != null) rs.close(); } catch (Exception e) { System.err.println("Error closing ResultSet: " + e.getMessage()); }
+            try { if (ps != null) ps.close(); } catch (Exception e) { System.err.println("Error closing PreparedStatement: " + e.getMessage()); }
+            // Jangan tutup koneksi di sini, biarkan di-manage oleh Koneksi class
+        }
+        return dataList;
+    }
 }
