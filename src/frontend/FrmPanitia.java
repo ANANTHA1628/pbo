@@ -1,4 +1,5 @@
 package frontend;
+
 import backend.PanitiaBackend;
 import backend.PanitiaBackend.EventItem;
 import backend.PanitiaBackend.KaryawanItem;
@@ -10,79 +11,83 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
+/**
+ * Class FrmPanitia
+ * Deskripsi: Form untuk menugaskan Karyawan ke dalam Event (Kepanitiaan).
+ * Mengelola relasi antara tabel Karyawan dan tabel Event.
+ */
 public class FrmPanitia extends JFrame {
+
+    // --- Komponen GUI ---
     JComboBox<EventItem> cmbEvent;
     JComboBox<KaryawanItem> cmbKaryawan;
-    JTextField txtJabatan, txtKeahlian, txtSearch;
+    JTextField txtJabatan, txtSearch;
     DefaultTableModel model;
     JTable table;
+
+    // --- Initialisasi Backend ---
     PanitiaBackend dao = new PanitiaBackend();
+
+    // --- Variabel State ---
     int selectedRow = -1;
     int selectedId = -1;
 
     public FrmPanitia() {
-        setTitle("Form Panitia");
+        setTitle("Form Kelola Kepanitiaan");
         setSize(900, 600);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Panel Input
-        JPanel pInput = new JPanel(new GridLayout(5, 2, 5, 5));
-        pInput.setBorder(BorderFactory.createTitledBorder("Input Data"));
-        
+        // 1. Panel Input Data (Bagian Atas)
+        JPanel pInput = new JPanel(new GridLayout(4, 2, 5, 5));
+        pInput.setBorder(BorderFactory.createTitledBorder("Input Data Panitia"));
+
         pInput.add(new JLabel("Event:"));
         cmbEvent = new JComboBox<>();
-        cmbEvent.addActionListener(e -> filterByEvent());
         pInput.add(cmbEvent);
 
         pInput.add(new JLabel("Karyawan:"));
         cmbKaryawan = new JComboBox<>();
-        cmbKaryawan.addActionListener(e -> updateKeahlian());
         pInput.add(cmbKaryawan);
 
-        pInput.add(new JLabel("Keahlian:"));
-        txtKeahlian = new JTextField();
-        txtKeahlian.setEditable(false);
-        pInput.add(txtKeahlian);
-
-        pInput.add(new JLabel("Jabatan:"));
+        pInput.add(new JLabel("Jabatan/Tugas:"));
         txtJabatan = new JTextField();
         pInput.add(txtJabatan);
 
+        // Panel Tombol Aksi
         JPanel pBtn = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
         JButton btnSimpan = new JButton("Simpan");
         JButton btnHapus = new JButton("Hapus");
         JButton btnReset = new JButton("Reset");
-        JButton btnBack = new JButton("Kembali");
+
+        // Listener Tombol
         btnSimpan.addActionListener(e -> simpan());
         btnHapus.addActionListener(e -> hapus());
         btnReset.addActionListener(e -> reset());
-        btnBack.setFont(new Font("Arial", Font.BOLD, 12));
-        btnBack.setBackground(new Color(105, 105, 105));
-        btnBack.setForeground(Color.WHITE);
-        btnBack.addActionListener(e -> kembaliKeMain());
+
         pBtn.add(btnSimpan);
         pBtn.add(btnHapus);
         pBtn.add(btnReset);
-        pBtn.add(btnBack);
         pInput.add(pBtn);
 
         JPanel pTop = new JPanel(new BorderLayout());
         pTop.add(pInput, BorderLayout.CENTER);
         add(pTop, BorderLayout.NORTH);
 
-        // Panel Search
+        // 2. Panel Pencarian (Bagian Bawah)
         JPanel pSearch = new JPanel(new BorderLayout(5, 5));
         pSearch.setBorder(BorderFactory.createTitledBorder("Pencarian"));
         pSearch.add(new JLabel("Cari Data:"), BorderLayout.WEST);
+
         txtSearch = new JTextField();
         txtSearch.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent e) {
-                cari();
+                cari(); // Live search
             }
         });
         pSearch.add(txtSearch, BorderLayout.CENTER);
+
         JButton btnClear = new JButton("Bersihkan");
         btnClear.addActionListener(e -> {
             txtSearch.setText("");
@@ -91,8 +96,8 @@ public class FrmPanitia extends JFrame {
         pSearch.add(btnClear, BorderLayout.EAST);
         add(pSearch, BorderLayout.SOUTH);
 
-        // Table
-        model = new DefaultTableModel(new String[]{"ID", "Event", "Karyawan", "Keahlian", "Jabatan"}, 0) {
+        // 3. Tabel Data (Bagian Tengah)
+        model = new DefaultTableModel(new String[] { "ID", "Event", "Karyawan", "Jabatan" }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -103,15 +108,17 @@ public class FrmPanitia extends JFrame {
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                pilihBaris();
+                pilihBaris(); // Load Detail ke form
             }
         });
         add(new JScrollPane(table), BorderLayout.CENTER);
 
+        // Load data awal
         loadCombos();
         loadData();
     }
 
+    // Mengambil data Event dan Karyawan untuk ComboBox
     void loadCombos() {
         try {
             cmbEvent.removeAllItems();
@@ -126,47 +133,49 @@ public class FrmPanitia extends JFrame {
                 cmbKaryawan.addItem(k);
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Gagal memuat combo box: " + e.getMessage());
         }
     }
 
+    // Mengambil semua data panitia
     void loadData() {
         try {
             model.setRowCount(0);
             List<Panitia> panitias = dao.getAllPanitia();
             for (Panitia p : panitias) {
-                model.addRow(new Object[]{p.id, p.nama_event, p.nama_karyawan, p.keahlian, p.jabatan});
+                model.addRow(new Object[] { p.id, p.nama_event, p.nama_karyawan, p.jabatan });
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error memuat tabel: " + e.getMessage());
         }
     }
 
+    // Pencarian data panitia
     void cari() {
         try {
             String keyword = txtSearch.getText().trim();
             model.setRowCount(0);
-            
+
             if (keyword.isEmpty()) {
                 loadData();
                 return;
             }
-            
+
             List<Panitia> panitias = dao.searchPanitia(keyword);
             if (panitias.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Data tidak ditemukan!");
-                loadData();
+                // JOptionPane.showMessageDialog(this, "Data tidak ditemukan!");
                 return;
             }
-            
+
             for (Panitia p : panitias) {
-                model.addRow(new Object[]{p.id, p.nama_event, p.nama_karyawan, p.jabatan});
+                model.addRow(new Object[] { p.id, p.nama_event, p.nama_karyawan, p.jabatan });
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
         }
     }
 
+    // Mengisi form input dari data tabel
     void pilihBaris() {
         selectedRow = table.getSelectedRow();
         if (selectedRow >= 0) {
@@ -189,7 +198,6 @@ public class FrmPanitia extends JFrame {
                         }
                     }
                     txtJabatan.setText(p.jabatan);
-                    txtKeahlian.setText(p.keahlian);
                 }
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
@@ -197,57 +205,28 @@ public class FrmPanitia extends JFrame {
         }
     }
 
-    void updateKeahlian() {
-        KaryawanItem selected = (KaryawanItem) cmbKaryawan.getSelectedItem();
-        if (selected != null) {
-            txtKeahlian.setText(selected.keahlian != null ? selected.keahlian : "");
-        }
-    }
-
-    void filterByEvent() {
-        EventItem selected = (EventItem) cmbEvent.getSelectedItem();
-        if (selected == null) {
-            return;
-        }
-        
-        try {
-            model.setRowCount(0);
-            List<Panitia> panitias = dao.getPanitiaByEventId(selected.id);
-            for (Panitia p : panitias) {
-                model.addRow(new Object[]{p.id, p.nama_event, p.nama_karyawan, p.keahlian, p.jabatan});
-            }
-            
-            // Jika tidak ada data untuk event ini
-            if (panitias.isEmpty()) {
-                // Optional: Uncomment jika ingin tampilkan message
-                // JOptionPane.showMessageDialog(this, "Tidak ada panitia untuk event ini");
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
-        }
-    }
-
+    // Menyimpan data Panitia
     void simpan() {
         try {
             if (txtJabatan.getText().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Semua field harus diisi!");
+                JOptionPane.showMessageDialog(this, "Jabatan harus diisi!");
                 return;
             }
 
             EventItem eventSelected = (EventItem) cmbEvent.getSelectedItem();
             KaryawanItem karyawanSelected = (KaryawanItem) cmbKaryawan.getSelectedItem();
-            
+
             if (eventSelected == null || karyawanSelected == null) {
                 JOptionPane.showMessageDialog(this, "Pilih event dan karyawan terlebih dahulu!");
                 return;
             }
 
             if (selectedId == -1) {
-                // Insert
+                // Insert Data Baru
                 dao.insertPanitia(eventSelected.id, karyawanSelected.id, txtJabatan.getText());
-                JOptionPane.showMessageDialog(this, "Data berhasil disimpan!");
+                JOptionPane.showMessageDialog(this, "Berhasil ditugaskan!");
             } else {
-                // Update
+                // Update Data Lama
                 dao.updatePanitia(selectedId, eventSelected.id, karyawanSelected.id, txtJabatan.getText());
                 JOptionPane.showMessageDialog(this, "Data berhasil diperbarui!");
             }
@@ -258,13 +237,15 @@ public class FrmPanitia extends JFrame {
         }
     }
 
+    // Menghapus data Panitia
     void hapus() {
         if (selectedId == -1) {
             JOptionPane.showMessageDialog(this, "Pilih data yang ingin dihapus!");
             return;
         }
 
-        int confirm = JOptionPane.showConfirmDialog(this, "Yakin ingin menghapus data ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Yakin ingin menghapus kepanitiaan ini?", "Konfirmasi",
+                JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 dao.deletePanitia(selectedId);
@@ -277,20 +258,16 @@ public class FrmPanitia extends JFrame {
         }
     }
 
+    // Mereset form input
     void reset() {
         cmbEvent.setSelectedIndex(0);
         cmbKaryawan.setSelectedIndex(0);
         txtJabatan.setText("");
-        txtKeahlian.setText("");
         txtSearch.setText("");
         table.clearSelection();
         selectedRow = -1;
         selectedId = -1;
         loadData();
-    }
-
-    void kembaliKeMain() {
-        new MainFrame().setVisible(true);
     }
 
     public static void main(String[] args) {

@@ -3,9 +3,15 @@ package backend;
 import java.sql.*;
 import java.util.ArrayList;
 
+/**
+ * Class VenueBackend
+ * Deskripsi: Menangani operasi Insert dan Read untuk data Venue.
+ * Venue adalah tempat pelaksanaan event dengan kapasitas tertentu.
+ */
 public class VenueBackend {
 
     // --- 1. SIMPAN DATA (INSERT) ---
+    // Menambahkan venue baru ke database.
     public boolean simpanVenue(String nama, String alamat, int kapasitas) {
         try {
             Connection c = Koneksi.getKoneksi();
@@ -23,6 +29,7 @@ public class VenueBackend {
     }
 
     // --- 2. AMBIL DATA (READ) ---
+    // Mengambil semua data venue untuk ditampilkan di tabel FrmVenue atau ComboBox.
     public ArrayList<Object[]> getVenueList() {
         ArrayList<Object[]> data = new ArrayList<>();
         try {
@@ -30,13 +37,13 @@ public class VenueBackend {
             String sql = "SELECT * FROM venue ORDER BY id ASC";
             Statement s = c.createStatement();
             ResultSet rs = s.executeQuery(sql);
-            
+
             while (rs.next()) {
-                data.add(new Object[]{
-                    rs.getInt("id"),
-                    rs.getString("nama_venue"),
-                    rs.getString("alamat"),
-                    rs.getInt("kapasitas")
+                data.add(new Object[] {
+                        rs.getInt("id"),
+                        rs.getString("nama_venue"),
+                        rs.getString("alamat"),
+                        rs.getInt("kapasitas")
                 });
             }
         } catch (Exception e) {

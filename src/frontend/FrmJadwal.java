@@ -1,289 +1,183 @@
 package frontend;
+
 import backend.JadwalBackend;
 import backend.JadwalBackend.EventItem;
 import backend.JadwalBackend.Jadwal;
-import backend.JadwalBackend.PanitiaItem;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.io.File;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.PageSize;
-import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.Element;
-import com.itextpdf.text.Font;
-import com.itextpdf.text.BaseColor;
-import com.itextpdf.text.Phrase;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfPCell;
-import com.itextpdf.text.pdf.PdfWriter;
 
+/**
+ * Class FrmJadwal
+ * Deskripsi: Form untuk mengelola Jadwal (Rundown) acara untuk event tertentu.
+ * Memungkinkan user untuk menetapkan jam mulai, jam selesai, dan pengisi acara.
+ */
 public class FrmJadwal extends JFrame {
+
+    // --- Komponen GUI ---
     JComboBox<EventItem> cmbEvent;
-    JComboBox<PanitiaItem> cmbPanitia;
-    JTextField txtAgenda, txtJabatan, txtMulai, txtSelesai, txtSearch;
+    JTextField txtAgenda, txtPengisi, txtMulai, txtSelesai, txtSearch;
     DefaultTableModel model;
     JTable table;
+
+    // --- Initialisasi Backend ---
     JadwalBackend dao = new JadwalBackend();
-    int selectedRow = -1;
-    int selectedId = -1;
+
+    // --- Variabel State ---
+    int selectedRow = -1; // Baris tabel yang dipilih
+    int selectedId = -1; // ID Jadwal dari baris terpilih
 
     public FrmJadwal() {
-        setTitle("Form Jadwal");
-        setSize(1000, 650);
+        setTitle("Form Kelola Jadwal Event");
+        setSize(900, 600);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(10, 10));
+        setLayout(new BorderLayout());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // ===== PANEL INPUT (TOP) =====
-        JPanel pInput = new JPanel(new GridLayout(7, 2, 8, 8));
+        // 1. Panel Input Data (Bagian Atas)
+        JPanel pInput = new JPanel(new GridLayout(6, 2, 5, 5));
         pInput.setBorder(BorderFactory.createTitledBorder("Input Data Jadwal"));
-        pInput.setBackground(new Color(240, 240, 240));
 
-        // Event
         pInput.add(new JLabel("Pilih Event:"));
         cmbEvent = new JComboBox<>();
-        cmbEvent.addActionListener(e -> {
-            loadPanitia();
-            filterByEvent();
-        });
         pInput.add(cmbEvent);
 
-        // Panitia
-        pInput.add(new JLabel("Pilih Panitia:"));
-        cmbPanitia = new JComboBox<>();
-        cmbPanitia.addActionListener(e -> updateJabatan());
-        pInput.add(cmbPanitia);
-
-        // Nama Agenda
         pInput.add(new JLabel("Nama Agenda:"));
         txtAgenda = new JTextField();
         pInput.add(txtAgenda);
 
-        // Jabatan
-        pInput.add(new JLabel("Jabatan:"));
-        txtJabatan = new JTextField();
-        txtJabatan.setEditable(false);
-        txtJabatan.setBackground(new Color(220, 220, 220));
-        pInput.add(txtJabatan);
+        pInput.add(new JLabel("Pengisi Acara:"));
+        txtPengisi = new JTextField();
+        pInput.add(txtPengisi);
 
-        // Jam Mulai
-        pInput.add(new JLabel("Jam Mulai (HH:MM:SS):"));
+        pInput.add(new JLabel("Jam Mulai:"));
         txtMulai = new JTextField();
-        txtMulai.setText("08:00:00");
-        txtMulai.setForeground(new Color(150, 150, 150));
         pInput.add(txtMulai);
 
-        // Jam Selesai
-        pInput.add(new JLabel("Jam Selesai (HH:MM:SS):"));
+        pInput.add(new JLabel("Jam Selesai:"));
         txtSelesai = new JTextField();
-        txtSelesai.setText("17:00:00");
-        txtSelesai.setForeground(new Color(150, 150, 150));
         pInput.add(txtSelesai);
 
-        // Button Panel
-        JPanel pBtn = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
-        pBtn.setBackground(new Color(240, 240, 240));
-        
+        // Panel Tombol Aksi
+        JPanel pBtn = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
         JButton btnSimpan = new JButton("Simpan");
-        btnSimpan.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 12));
-        btnSimpan.setBackground(new Color(34, 139, 34));
-        btnSimpan.setForeground(Color.WHITE);
-        btnSimpan.addActionListener(e -> simpan());
-
         JButton btnHapus = new JButton("Hapus");
-        btnHapus.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 12));
-        btnHapus.setBackground(new Color(220, 20, 60));
-        btnHapus.setForeground(Color.WHITE);
-        btnHapus.addActionListener(e -> hapus());
-
         JButton btnReset = new JButton("Reset");
-        btnReset.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 12));
-        btnReset.setBackground(new Color(70, 130, 180));
-        btnReset.setForeground(Color.WHITE);
+
+        // Listener Tombol
+        btnSimpan.addActionListener(e -> simpan());
+        btnHapus.addActionListener(e -> hapus());
         btnReset.addActionListener(e -> reset());
-
-        JButton btnBack = new JButton("Kembali");
-        btnBack.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 12));
-        btnBack.setBackground(new Color(105, 105, 105));
-        btnBack.setForeground(Color.WHITE);
-        btnBack.addActionListener(e -> kembaliKeMain());
-
-        JButton btnExportPdf = new JButton("Export PDF");
-        btnExportPdf.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 12));
-        btnExportPdf.setBackground(new Color(220, 20, 60));
-        btnExportPdf.setForeground(Color.WHITE);
-        btnExportPdf.addActionListener(e -> exportToPdf());
 
         pBtn.add(btnSimpan);
         pBtn.add(btnHapus);
         pBtn.add(btnReset);
-        pBtn.add(btnBack);
-        pBtn.add(btnExportPdf);
         pInput.add(pBtn);
 
         JPanel pTop = new JPanel(new BorderLayout());
         pTop.add(pInput, BorderLayout.CENTER);
-        pTop.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         add(pTop, BorderLayout.NORTH);
 
-        // ===== PANEL TABLE (CENTER) =====
-        model = new DefaultTableModel(new String[]{"ID", "Event", "Agenda", "Panitia", "Jabatan", "Jam Mulai", "Jam Selesai"}, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-        table = new JTable(model);
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setRowHeight(25);
-        table.setFont(new java.awt.Font("Arial", java.awt.Font.PLAIN, 11));
-        table.getTableHeader().setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 12));
-        table.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                pilihBaris();
-            }
-        });
-        
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createTitledBorder("Data Jadwal"));
-        add(scrollPane, BorderLayout.CENTER);
-
-        // ===== PANEL SEARCH (BOTTOM) =====
+        // 2. Panel Pencarian (Bagian Bawah)
         JPanel pSearch = new JPanel(new BorderLayout(5, 5));
         pSearch.setBorder(BorderFactory.createTitledBorder("Pencarian"));
-        pSearch.setBackground(new Color(240, 240, 240));
-
         pSearch.add(new JLabel("Cari Data:"), BorderLayout.WEST);
-        
+
         txtSearch = new JTextField();
         txtSearch.addKeyListener(new java.awt.event.KeyAdapter() {
-            @Override
             public void keyReleased(java.awt.event.KeyEvent e) {
-                cari();
+                cari(); // Live search saat mengetik
             }
         });
         pSearch.add(txtSearch, BorderLayout.CENTER);
 
         JButton btnClear = new JButton("Bersihkan");
-        btnClear.setBackground(new Color(100, 149, 237));
-        btnClear.setForeground(Color.WHITE);
         btnClear.addActionListener(e -> {
             txtSearch.setText("");
             loadData();
         });
         pSearch.add(btnClear, BorderLayout.EAST);
-        
-        JPanel pSearchContainer = new JPanel(new BorderLayout());
-        pSearchContainer.add(pSearch, BorderLayout.CENTER);
-        pSearchContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        add(pSearchContainer, BorderLayout.SOUTH);
+        add(pSearch, BorderLayout.SOUTH);
 
-        // Tambah focus listener untuk placeholder jam
-        addPlaceholderListener(txtMulai, "08:00:00");
-        addPlaceholderListener(txtSelesai, "17:00:00");
+        // 3. Tabel Data (Bagian Tengah)
+        model = new DefaultTableModel(
+                new String[] { "ID", "Event", "Agenda", "Pengisi Acara", "Jam Mulai", "Jam Selesai" }, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Cell tidak bisa diedit langsung
+            }
+        };
+        table = new JTable(model);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                pilihBaris(); // Load data ke form saat baris diklik
+            }
+        });
+        add(new JScrollPane(table), BorderLayout.CENTER);
 
+        // Load data awal
         loadEvent();
         loadData();
     }
 
-    void addPlaceholderListener(JTextField txt, String placeholder) {
-        txt.addFocusListener(new java.awt.event.FocusAdapter() {
-            @Override
-            public void focusGained(java.awt.event.FocusEvent e) {
-                if (txt.getText().equals(placeholder)) {
-                    txt.setText("");
-                    txt.setForeground(new Color(0, 0, 0));
-                }
-            }
-
-            @Override
-            public void focusLost(java.awt.event.FocusEvent e) {
-                if (txt.getText().isEmpty()) {
-                    txt.setText(placeholder);
-                    txt.setForeground(new Color(150, 150, 150));
-                }
-            }
-        });
-    }
-
+    // Mengambil daftar event untuk ComboBox
     void loadEvent() {
         try {
-            cmbEvent.removeAllItems();
             List<EventItem> events = dao.getAllEvent();
+            cmbEvent.removeAllItems();
             for (EventItem e : events) {
                 cmbEvent.addItem(e);
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Gagal memuat event: " + e.getMessage());
         }
     }
 
-    void loadPanitia() {
-        EventItem selected = (EventItem) cmbEvent.getSelectedItem();
-        if (selected == null) {
-            return;
-        }
-        
-        try {
-            cmbPanitia.removeAllItems();
-            List<PanitiaItem> panitias = dao.getPanitiaByEventId(selected.id);
-            for (PanitiaItem p : panitias) {
-                cmbPanitia.addItem(p);
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
-        }
-    }
-
-    void updateJabatan() {
-        PanitiaItem selected = (PanitiaItem) cmbPanitia.getSelectedItem();
-        if (selected != null) {
-            txtJabatan.setText(selected.jabatan);
-        }
-    }
-
+    // Mengambil semua data jadwal dari database
     void loadData() {
         try {
             model.setRowCount(0);
             List<Jadwal> jadwals = dao.getAllJadwal();
             for (Jadwal j : jadwals) {
-                model.addRow(new Object[]{j.id, j.nama_event, j.nama_agenda, j.nama_karyawan, j.jabatan, j.waktu_mulai, j.waktu_selesai});
+                model.addRow(new Object[] { j.id, j.nama_event, j.nama_agenda, j.pengisi_acara, j.waktu_mulai,
+                        j.waktu_selesai });
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Gagal memuat data: " + e.getMessage());
         }
     }
 
+    // Mencari jadwal berdasarkan keyword
     void cari() {
         try {
             String keyword = txtSearch.getText().trim();
             model.setRowCount(0);
-            
+
             if (keyword.isEmpty()) {
                 loadData();
                 return;
             }
-            
+
             List<Jadwal> jadwals = dao.searchJadwal(keyword);
             if (jadwals.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Data tidak ditemukan!");
-                loadData();
-                return;
+                return; // Jangan tampilkan pesan error saat mengetik, cukup kosongkan atau biarkan
             }
-            
+
             for (Jadwal j : jadwals) {
-                model.addRow(new Object[]{j.id, j.nama_event, j.nama_agenda, j.nama_karyawan, j.jabatan, j.waktu_mulai, j.waktu_selesai});
+                model.addRow(new Object[] { j.id, j.nama_event, j.nama_agenda, j.pengisi_acara, j.waktu_mulai,
+                        j.waktu_selesai });
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error saat mencari: " + e.getMessage());
         }
     }
 
+    // Mengisi form input dari data tabel yang dipilih
     void pilihBaris() {
         selectedRow = table.getSelectedRow();
         if (selectedRow >= 0) {
@@ -291,196 +185,90 @@ public class FrmJadwal extends JFrame {
             try {
                 Jadwal j = dao.getJadwalById(selectedId);
                 if (j != null) {
-                    // Set combo box sesuai event_id
+                    // Set combobox event yang sesuai
                     for (int i = 0; i < cmbEvent.getItemCount(); i++) {
                         if (cmbEvent.getItemAt(i).id == j.event_id) {
                             cmbEvent.setSelectedIndex(i);
                             break;
                         }
                     }
-                    loadPanitia();
-                    // Set panitia combo
-                    for (int i = 0; i < cmbPanitia.getItemCount(); i++) {
-                        if (cmbPanitia.getItemAt(i).id == j.panitia_id) {
-                            cmbPanitia.setSelectedIndex(i);
-                            break;
-                        }
-                    }
                     txtAgenda.setText(j.nama_agenda);
-                    txtJabatan.setText(j.jabatan);
+                    txtPengisi.setText(j.pengisi_acara);
                     txtMulai.setText(j.waktu_mulai);
                     txtSelesai.setText(j.waktu_selesai);
                 }
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+                JOptionPane.showMessageDialog(this, "Gagal mengambil detail: " + e.getMessage());
             }
         }
     }
 
+    // Menyimpan data (Insert atau Update)
     void simpan() {
         try {
-            // Validasi - cek jika masih placeholder
-            String jamMulai = txtMulai.getText();
-            String jamSelesai = txtSelesai.getText();
-            
-            if (txtAgenda.getText().isEmpty() || txtJabatan.getText().isEmpty() ||
-                jamMulai.isEmpty() || jamMulai.equals("08:00:00") ||
-                jamSelesai.isEmpty() || jamSelesai.equals("17:00:00")) {
-                JOptionPane.showMessageDialog(this, "Semua field harus diisi dengan data yang benar!");
+            if (txtAgenda.getText().isEmpty() || txtPengisi.getText().isEmpty() ||
+                    txtMulai.getText().isEmpty() || txtSelesai.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Semua kolom form harus diisi!");
                 return;
             }
 
-            EventItem eventSelected = (EventItem) cmbEvent.getSelectedItem();
-            PanitiaItem panitiaSelected = (PanitiaItem) cmbPanitia.getSelectedItem();
-            
-            if (eventSelected == null || panitiaSelected == null) {
-                JOptionPane.showMessageDialog(this, "Pilih event dan panitia terlebih dahulu!");
+            EventItem selected = (EventItem) cmbEvent.getSelectedItem();
+            if (selected == null) {
+                JOptionPane.showMessageDialog(this, "Harap pilih event terlebih dahulu!");
                 return;
             }
 
             if (selectedId == -1) {
-                // Insert
-                dao.insertJadwal(eventSelected.id, panitiaSelected.id, txtAgenda.getText(),
-                        jamMulai, jamSelesai);
-                JOptionPane.showMessageDialog(this, "Data berhasil disimpan!");
+                // Proses Insert Data Baru
+                dao.insertJadwal(selected.id, txtAgenda.getText(), txtPengisi.getText(),
+                        txtMulai.getText(), txtSelesai.getText());
+                JOptionPane.showMessageDialog(this, "Jadwal berhasil disimpan!");
             } else {
-                // Update
-                dao.updateJadwal(selectedId, eventSelected.id, panitiaSelected.id, txtAgenda.getText(),
-                        jamMulai, jamSelesai);
-                JOptionPane.showMessageDialog(this, "Data berhasil diperbarui!");
+                // Proses Update Data Lama
+                dao.updateJadwal(selectedId, selected.id, txtAgenda.getText(), txtPengisi.getText(),
+                        txtMulai.getText(), txtSelesai.getText());
+                JOptionPane.showMessageDialog(this, "Jadwal berhasil diperbarui!");
             }
             reset();
             loadData();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Gagal menyimpan: " + e.getMessage());
         }
     }
 
+    // Menghapus data jadwal
     void hapus() {
         if (selectedId == -1) {
-            JOptionPane.showMessageDialog(this, "Pilih data yang ingin dihapus!");
+            JOptionPane.showMessageDialog(this, "Silakan pilih jadwal yang akan dihapus dari tabel!");
             return;
         }
 
-        int confirm = JOptionPane.showConfirmDialog(this, "Yakin ingin menghapus data ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Yakin ingin menghapus jadwal ini?", "Konfirmasi Hapus",
+                JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 dao.deleteJadwal(selectedId);
-                JOptionPane.showMessageDialog(this, "Data berhasil dihapus!");
+                JOptionPane.showMessageDialog(this, "Jadwal berhasil dihapus!");
                 reset();
                 loadData();
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+                JOptionPane.showMessageDialog(this, "Gagal menghapus: " + e.getMessage());
             }
         }
     }
 
+    // Mereset form input ke kondisi awal
     void reset() {
         cmbEvent.setSelectedIndex(0);
-        cmbPanitia.removeAllItems();
         txtAgenda.setText("");
-        txtJabatan.setText("");
-        txtMulai.setText("08:00:00");
-        txtMulai.setForeground(new Color(150, 150, 150));
-        txtSelesai.setText("17:00:00");
-        txtSelesai.setForeground(new Color(150, 150, 150));
+        txtPengisi.setText("");
+        txtMulai.setText("");
+        txtSelesai.setText("");
         txtSearch.setText("");
         table.clearSelection();
         selectedRow = -1;
         selectedId = -1;
         loadData();
-    }
-
-    void filterByEvent() {
-        try {
-            EventItem selected = (EventItem) cmbEvent.getSelectedItem();
-            if (selected == null) {
-                loadData();
-                return;
-            }
-            
-            model.setRowCount(0);
-            List<Jadwal> jadwals = dao.getAllJadwal();
-            for (Jadwal j : jadwals) {
-                if (j.event_id == selected.id) {
-                    model.addRow(new Object[]{j.id, j.nama_event, j.nama_agenda, j.nama_karyawan, j.jabatan, j.waktu_mulai, j.waktu_selesai});
-                }
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
-        }
-    }
-
-    void exportToPdf() {
-        try {
-            if (model.getRowCount() == 0) {
-                JOptionPane.showMessageDialog(this, "Tidak ada data untuk diekspor!");
-                return;
-            }
-
-            JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setDialogTitle("Simpan File PDF");
-            fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("PDF Files", "pdf"));
-            
-            int result = fileChooser.showSaveDialog(this);
-            if (result != JFileChooser.APPROVE_OPTION) {
-                return;
-            }
-
-            String filePath = fileChooser.getSelectedFile().getAbsolutePath();
-            if (!filePath.endsWith(".pdf")) {
-                filePath += ".pdf";
-            }
-
-            Document document = new Document(PageSize.A4.rotate());
-            PdfWriter.getInstance(document, new java.io.FileOutputStream(filePath));
-            document.open();
-
-            Paragraph title = new Paragraph("Laporan Data Jadwal", new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD));
-            title.setAlignment(Element.ALIGN_CENTER);
-            document.add(title);
-            
-            EventItem eventSelected = (EventItem) cmbEvent.getSelectedItem();
-            Paragraph eventInfo = new Paragraph("Event: " + (eventSelected != null ? eventSelected.nama : "Semua Event"), 
-                    new Font(Font.FontFamily.HELVETICA, 12));
-            eventInfo.setAlignment(Element.ALIGN_CENTER);
-            document.add(eventInfo);
-            
-            Paragraph space = new Paragraph("\n");
-            document.add(space);
-
-            PdfPTable pdfTable = new PdfPTable(7);
-            pdfTable.setWidthPercentage(100);
-            
-            String[] headers = {"ID", "Event", "Agenda", "Panitia", "Jabatan", "Jam Mulai", "Jam Selesai"};
-            for (String header : headers) {
-                PdfPCell cell = new PdfPCell(new Phrase(header, new Font(Font.FontFamily.HELVETICA, 11, Font.BOLD)));
-                cell.setBackgroundColor(new BaseColor(200, 200, 200));
-                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                pdfTable.addCell(cell);
-            }
-
-            for (int i = 0; i < model.getRowCount(); i++) {
-                for (int j = 0; j < 7; j++) {
-                    Object value = model.getValueAt(i, j);
-                    PdfPCell cell = new PdfPCell(new Phrase(value != null ? value.toString() : "", 
-                            new Font(Font.FontFamily.HELVETICA, 10)));
-                    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                    pdfTable.addCell(cell);
-                }
-            }
-
-            document.add(pdfTable);
-            document.close();
-
-            JOptionPane.showMessageDialog(this, "File PDF berhasil disimpan di:\n" + filePath);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error saat export PDF: " + e.getMessage());
-        }
-    }
-
-    void kembaliKeMain() {
-        new MainFrame().setVisible(true);
     }
 
     public static void main(String[] args) {
