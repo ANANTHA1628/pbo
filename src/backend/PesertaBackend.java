@@ -143,53 +143,71 @@ public class PesertaBackend {
         }
         return dataList;
     }
-    
-    public ArrayList<Object[]> getListPeserta(int eventId) {
+
+    // Method untuk mengambil daftar peserta berdasarkan event
+    public ArrayList<Object[]> getDaftarPesertaByEvent(int eventId) {
         ArrayList<Object[]> dataList = new ArrayList<>();
-        Connection c = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        
         try {
-            c = Koneksi.getKoneksi();
-            if (c == null) {
-                JOptionPane.showMessageDialog(null, "Tidak dapat terhubung ke database. Periksa koneksi database Anda.", "Error Koneksi", JOptionPane.ERROR_MESSAGE);
-                return dataList;
-            }
-            
-            String sql = "SELECT p.id, p.nama_peserta, p.email, p.no_hp, ep.event_id, e.nama_event " +
+            Connection c = Koneksi.getKoneksi();
+            String sql = "SELECT p.id, p.nama_peserta, p.email, p.no_hp " +
                         "FROM peserta p " +
                         "JOIN event_peserta ep ON p.id = ep.peserta_id " +
-                        "JOIN event e ON ep.event_id = e.id " +
                         "WHERE ep.event_id = ?";
-            
-            ps = c.prepareStatement(sql);
+            PreparedStatement ps = c.prepareStatement(sql);
             ps.setInt(1, eventId);
-            rs = ps.executeQuery();
+            ResultSet rs = ps.executeQuery();
             
             while (rs.next()) {
                 Object[] baris = {
                     rs.getInt("id"),
-                    rs.getString("nama_peserta"),  // Diperbaiki dari nombre_peserta ke nama_peserta
+                    rs.getString("nama_peserta"),
                     rs.getString("email"),
-                    rs.getString("no_hp"),
-                    rs.getInt("event_id"),
-                    rs.getString("nama_event")    // Diperbaiki dari nombre_evento ke nama_event
+                    rs.getString("no_hp")
                 };
                 dataList.add(baris);
             }
-        } catch (SQLException e) {
-            System.err.println("Error Load Peserta: " + e.getMessage());
-            JOptionPane.showMessageDialog(null, 
-                "Gagal memuat data peserta: " + e.getMessage() + 
-                "\nPastikan tabel-tabel sudah ada di database.", 
-                "Error", 
-                JOptionPane.ERROR_MESSAGE);
-        } finally {
-            try { if (rs != null) rs.close(); } catch (Exception e) { System.err.println("Error closing ResultSet: " + e.getMessage()); }
-            try { if (ps != null) ps.close(); } catch (Exception e) { System.err.println("Error closing PreparedStatement: " + e.getMessage()); }
-            // Jangan tutup koneksi di sini, biarkan di-manage oleh Koneksi class
+        } catch (Exception e) {
+            System.out.println("Error Load Peserta: " + e.getMessage());
         }
         return dataList;
+    }
+    
+    // Method untuk menghapus data peserta berdasarkan ID
+    public boolean hapusPeserta(int pesertaId) {
+        Connection c = null;
+        try {
+            c = Koneksi.getKoneksi();
+            c.setAutoCommit(false); // Mulai transaksi
+            
+            // Hapus dari tabel event_peserta terlebih dahulu karena ada foreign key constraint
+            String sql1 = "DELETE FROM event_peserta WHERE peserta_id = ?";
+            PreparedStatement ps1 = c.prepareStatement(sql1);
+            ps1.setInt(1, pesertaId);
+            ps1.executeUpdate();
+            
+            // Kemudian hapus dari tabel peserta
+            String sql2 = "DELETE FROM peserta WHERE id = ?";
+            PreparedStatement ps2 = c.prepareStatement(sql2);
+            ps2.setInt(1, pesertaId);
+            int affectedRows = ps2.executeUpdate();
+            
+            c.commit(); // Commit transaksi
+            return affectedRows > 0;
+            
+        } catch (Exception e) {
+            try {
+                if (c != null) c.rollback(); // Rollback jika terjadi error
+            } catch (Exception ex) {
+                System.out.println("Error saat rollback: " + ex.getMessage());
+            }
+            System.out.println("Error Hapus Peserta: " + e.getMessage());
+            return false;
+        } finally {
+            try {
+                if (c != null) c.setAutoCommit(true); // Kembalikan ke mode auto-commit
+            } catch (Exception e) {
+                System.out.println("Error mengembalikan auto-commit: " + e.getMessage());
+            }
+        }
     }
 }

@@ -21,7 +21,8 @@ public class FrmPanitia extends JFrame {
     // --- Komponen GUI ---
     JComboBox<EventItem> cmbEvent;
     JComboBox<KaryawanItem> cmbKaryawan;
-    JTextField txtJabatan, txtSearch;
+    JTextField txtJabatan, txtKeahlian, txtSearch;
+    JButton btnShowAll;
     DefaultTableModel model;
     JTable table;
 
@@ -40,16 +41,24 @@ public class FrmPanitia extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // 1. Panel Input Data (Bagian Atas)
-        JPanel pInput = new JPanel(new GridLayout(4, 2, 5, 5));
+        JPanel pInput = new JPanel(new GridLayout(5, 2, 5, 5));
         pInput.setBorder(BorderFactory.createTitledBorder("Input Data Panitia"));
 
         pInput.add(new JLabel("Event:"));
         cmbEvent = new JComboBox<>();
+        cmbEvent.addActionListener(e -> filterByEvent());
         pInput.add(cmbEvent);
 
         pInput.add(new JLabel("Karyawan:"));
         cmbKaryawan = new JComboBox<>();
+        cmbKaryawan.addActionListener(e -> updateKeahlian());
         pInput.add(cmbKaryawan);
+
+        pInput.add(new JLabel("Keahlian:"));
+        txtKeahlian = new JTextField();
+        txtKeahlian.setEditable(false);
+        txtKeahlian.setBackground(new Color(220, 220, 220));
+        pInput.add(txtKeahlian);
 
         pInput.add(new JLabel("Jabatan/Tugas:"));
         txtJabatan = new JTextField();
@@ -60,15 +69,18 @@ public class FrmPanitia extends JFrame {
         JButton btnSimpan = new JButton("Simpan");
         JButton btnHapus = new JButton("Hapus");
         JButton btnReset = new JButton("Reset");
+        btnShowAll = new JButton("Tampilkan Semua");
 
         // Listener Tombol
         btnSimpan.addActionListener(e -> simpan());
         btnHapus.addActionListener(e -> hapus());
         btnReset.addActionListener(e -> reset());
+        btnShowAll.addActionListener(e -> loadData());
 
         pBtn.add(btnSimpan);
         pBtn.add(btnHapus);
         pBtn.add(btnReset);
+        pBtn.add(btnShowAll);
         pInput.add(pBtn);
 
         JPanel pTop = new JPanel(new BorderLayout());
@@ -97,7 +109,7 @@ public class FrmPanitia extends JFrame {
         add(pSearch, BorderLayout.SOUTH);
 
         // 3. Tabel Data (Bagian Tengah)
-        model = new DefaultTableModel(new String[] { "ID", "Event", "Karyawan", "Jabatan" }, 0) {
+        model = new DefaultTableModel(new String[] { "ID", "Event", "Karyawan", "Jabatan", "Keahlian" }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -137,13 +149,35 @@ public class FrmPanitia extends JFrame {
         }
     }
 
+    // Update keahlian berdasarkan karyawan yang dipilih
+    void updateKeahlian() {
+        KaryawanItem selected = (KaryawanItem) cmbKaryawan.getSelectedItem();
+        if (selected == null) {
+            txtKeahlian.setText("");
+            return;
+        }
+        
+        try {
+            // Ambil data karyawan untuk mendapatkan keahlian
+            String sql = "SELECT keahlian FROM karyawan WHERE id = ?";
+            java.sql.PreparedStatement ps = backend.Koneksi.getKoneksi().prepareStatement(sql);
+            ps.setInt(1, selected.id);
+            java.sql.ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                txtKeahlian.setText(rs.getString("keahlian"));
+            }
+        } catch (Exception e) {
+            txtKeahlian.setText("");
+        }
+    }
+
     // Mengambil semua data panitia
     void loadData() {
         try {
             model.setRowCount(0);
             List<Panitia> panitias = dao.getAllPanitia();
             for (Panitia p : panitias) {
-                model.addRow(new Object[] { p.id, p.nama_event, p.nama_karyawan, p.jabatan });
+                model.addRow(new Object[] { p.id, p.nama_event, p.nama_karyawan, p.jabatan, p.keahlian });
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error memuat tabel: " + e.getMessage());
@@ -168,10 +202,28 @@ public class FrmPanitia extends JFrame {
             }
 
             for (Panitia p : panitias) {
-                model.addRow(new Object[] { p.id, p.nama_event, p.nama_karyawan, p.jabatan });
+                model.addRow(new Object[] { p.id, p.nama_event, p.nama_karyawan, p.jabatan, p.keahlian });
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+        }
+    }
+
+    // Filter panitia berdasarkan event yang dipilih
+    void filterByEvent() {
+        EventItem selected = (EventItem) cmbEvent.getSelectedItem();
+        if (selected == null) {
+            return;
+        }
+
+        try {
+            model.setRowCount(0);
+            List<Panitia> panitias = dao.getPanitiaByEventId(selected.id);
+            for (Panitia p : panitias) {
+                model.addRow(new Object[] { p.id, p.nama_event, p.nama_karyawan, p.jabatan, p.keahlian });
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error saat filter: " + e.getMessage());
         }
     }
 
@@ -198,6 +250,7 @@ public class FrmPanitia extends JFrame {
                         }
                     }
                     txtJabatan.setText(p.jabatan);
+                    txtKeahlian.setText(p.keahlian);
                 }
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
@@ -263,6 +316,7 @@ public class FrmPanitia extends JFrame {
         cmbEvent.setSelectedIndex(0);
         cmbKaryawan.setSelectedIndex(0);
         txtJabatan.setText("");
+        txtKeahlian.setText("");
         txtSearch.setText("");
         table.clearSelection();
         selectedRow = -1;
