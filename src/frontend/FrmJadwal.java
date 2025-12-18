@@ -406,18 +406,18 @@ public class FrmJadwal extends JFrame {
                     model.addRow(new Object[]{j.id, j.nama_event, j.nama_agenda, j.nama_karyawan, j.jabatan, j.waktu_mulai, j.waktu_selesai});
                 }
             }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
-        }
-    }
-
     void exportToPdf() {
+        java.io.FileOutputStream fileOut = null;
+        Document document = null;
+        
         try {
-            if (model.getRowCount() == 0) {
+            // Cek apakah ada data untuk diekspor
+            if (model == null || model.getRowCount() == 0) {
                 JOptionPane.showMessageDialog(this, "Tidak ada data untuk diekspor!");
                 return;
             }
 
+            // Konfigurasi file chooser
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setDialogTitle("Simpan File PDF");
             fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("PDF Files", "pdf"));
@@ -427,63 +427,110 @@ public class FrmJadwal extends JFrame {
                 return;
             }
 
+            // Pastikan ekstensi .pdf
             String filePath = fileChooser.getSelectedFile().getAbsolutePath();
-            if (!filePath.endsWith(".pdf")) {
+            if (!filePath.toLowerCase().endsWith(".pdf")) {
                 filePath += ".pdf";
             }
 
-            Document document = new Document(PageSize.A4.rotate());
-            PdfWriter.getInstance(document, new java.io.FileOutputStream(filePath));
+            // Cek apakah file bisa ditulis
+            File outputFile = new File(filePath);
+            if (outputFile.exists() && !outputFile.canWrite()) {
+                JOptionPane.showMessageDialog(this, "Tidak dapat menulis ke file yang dipilih!");
+                return;
+            }
+
+            // Inisialisasi dokumen PDF
+            document = new Document(PageSize.A4.rotate());
+            fileOut = new java.io.FileOutputStream(filePath);
+            PdfWriter writer = PdfWriter.getInstance(document, fileOut);
+            
             document.open();
 
-            Paragraph title = new Paragraph("Laporan Data Jadwal", new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD));
+            // Judul dokumen
+            Paragraph title = new Paragraph("Laporan Data Jadwal", 
+                new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD));
             title.setAlignment(Element.ALIGN_CENTER);
             document.add(title);
             
+            // Info event yang dipilih
             EventItem eventSelected = (EventItem) cmbEvent.getSelectedItem();
-            Paragraph eventInfo = new Paragraph("Event: " + (eventSelected != null ? eventSelected.nama : "Semua Event"), 
+            if (eventSelected != null) {
+                Paragraph eventInfo = new Paragraph("Event: " + eventSelected.nama, 
                     new Font(Font.FontFamily.HELVETICA, 12));
-            eventInfo.setAlignment(Element.ALIGN_CENTER);
-            document.add(eventInfo);
+                eventInfo.setAlignment(Element.ALIGN_CENTER);
+                document.add(eventInfo);
+            }
             
-            Paragraph space = new Paragraph("\n");
-            document.add(space);
+            // Spasi
+            document.add(new Paragraph("\n"));
 
+            // Buat tabel PDF
             PdfPTable pdfTable = new PdfPTable(7);
             pdfTable.setWidthPercentage(100);
             
+            // Header tabel
             String[] headers = {"ID", "Event", "Agenda", "Panitia", "Jabatan", "Jam Mulai", "Jam Selesai"};
             for (String header : headers) {
-                PdfPCell cell = new PdfPCell(new Phrase(header, new Font(Font.FontFamily.HELVETICA, 11, Font.BOLD)));
+                PdfPCell cell = new PdfPCell(new Phrase(header, 
+                    new Font(Font.FontFamily.HELVETICA, 11, Font.BOLD)));
                 cell.setBackgroundColor(new BaseColor(200, 200, 200));
                 cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setPadding(5);
                 pdfTable.addCell(cell);
             }
 
+            // Isi tabel
             for (int i = 0; i < model.getRowCount(); i++) {
                 for (int j = 0; j < 7; j++) {
-                    Object value = model.getValueAt(i, j);
-                    PdfPCell cell = new PdfPCell(new Phrase(value != null ? value.toString() : "", 
+                    try {
+                        Object value = model.getValueAt(i, j);
+                        PdfPCell cell = new PdfPCell(new Phrase(
+                            value != null ? value.toString() : "-", 
                             new Font(Font.FontFamily.HELVETICA, 10)));
-                    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                    pdfTable.addCell(cell);
+                        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        cell.setPadding(5);
+                        pdfTable.addCell(cell);
+                    } catch (Exception e) {
+                        // Tangani error saat mengambil data dari model
+                        PdfPCell cell = new PdfPCell(new Phrase("-", 
+                            new Font(Font.FontFamily.HELVETICA, 10)));
+                        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        pdfTable.addCell(cell);
+                    }
                 }
             }
 
             document.add(pdfTable);
-            document.close();
-
-            JOptionPane.showMessageDialog(this, "File PDF berhasil disimpan di:\n" + filePath);
+            
+            JOptionPane.showMessageDialog(this, 
+                "<html>File PDF berhasil disimpan di:<br>" + 
+                filePath.replace("\\", "\\\\") + "</html>");
+                
+        } catch (java.io.IOException e) {
+            JOptionPane.showMessageDialog(this, 
+                "Gagal menyimpan file. Pastikan file tidak sedang digunakan oleh program lain.\n" +
+                "Error: " + e.getMessage(),
+                "Error", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error saat export PDF: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, 
+                "Terjadi kesalahan saat mengekspor ke PDF:\n" + e.getMessage(),
+                "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        } finally {
+            // Pastikan dokumen ditutup dengan benar
+            if (document != null && document.isOpen()) {
+                document.close();
+            }
+            // Tutup file output
+            if (fileOut != null) {
+                try { fileOut.close(); } catch (Exception e) {}
+            }
         }
     }
 
     void kembaliKeMain() {
+        this.dispose();
         new MainFrame().setVisible(true);
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new FrmJadwal().setVisible(true));
     }
 }

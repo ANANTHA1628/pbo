@@ -143,4 +143,32 @@ public class PesertaBackend {
         }
         return dataList;
     }
+
+    // Method untuk mengambil daftar peserta berdasarkan event
+    public ArrayList<Object[]> getDaftarPesertaByEvent(int eventId) {
+        ArrayList<Object[]> dataList = new ArrayList<>();
+        try {
+            Connection c = Koneksi.getKoneksi();
+            String sql = "SELECT p.id, p.nama_peserta, p.email, p.no_hp " +
+                        "FROM peserta p " +
+                        "JOIN event_peserta ep ON p.id = ep.peserta_id " +
+                        "WHERE ep.event_id = ?";
+            PreparedStatement ps = c.prepareStatement(sql);
+            ps.setInt(1, eventId);
+            ResultSet rs = ps.executeQuery();
+            
+            while (rs.next()) {
+                Object[] baris = {
+                    rs.getInt("id"),
+                    rs.getString("nama_peserta"),
+                    rs.getString("email"),
+                    rs.getString("no_hp")
+                };
+                dataList.add(baris);
+            }
+        } catch (Exception e) {
+            System.out.println("Error Load Peserta: " + e.getMessage());
+        }
+        return dataList;
+    }
 }
