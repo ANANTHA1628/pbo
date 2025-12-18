@@ -171,4 +171,43 @@ public class PesertaBackend {
         }
         return dataList;
     }
+    
+    // Method untuk menghapus data peserta berdasarkan ID
+    public boolean hapusPeserta(int pesertaId) {
+        Connection c = null;
+        try {
+            c = Koneksi.getKoneksi();
+            c.setAutoCommit(false); // Mulai transaksi
+            
+            // Hapus dari tabel event_peserta terlebih dahulu karena ada foreign key constraint
+            String sql1 = "DELETE FROM event_peserta WHERE peserta_id = ?";
+            PreparedStatement ps1 = c.prepareStatement(sql1);
+            ps1.setInt(1, pesertaId);
+            ps1.executeUpdate();
+            
+            // Kemudian hapus dari tabel peserta
+            String sql2 = "DELETE FROM peserta WHERE id = ?";
+            PreparedStatement ps2 = c.prepareStatement(sql2);
+            ps2.setInt(1, pesertaId);
+            int affectedRows = ps2.executeUpdate();
+            
+            c.commit(); // Commit transaksi
+            return affectedRows > 0;
+            
+        } catch (Exception e) {
+            try {
+                if (c != null) c.rollback(); // Rollback jika terjadi error
+            } catch (Exception ex) {
+                System.out.println("Error saat rollback: " + ex.getMessage());
+            }
+            System.out.println("Error Hapus Peserta: " + e.getMessage());
+            return false;
+        } finally {
+            try {
+                if (c != null) c.setAutoCommit(true); // Kembalikan ke mode auto-commit
+            } catch (Exception e) {
+                System.out.println("Error mengembalikan auto-commit: " + e.getMessage());
+            }
+        }
+    }
 }

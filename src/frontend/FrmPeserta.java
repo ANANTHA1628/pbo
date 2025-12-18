@@ -18,7 +18,7 @@ public class FrmPeserta extends JFrame {
     JComboBox<ComboItem> cmbEvent;
     JTextField txtNama, txtEmail, txtHp;
     JRadioButton rbManual, rbImport;
-    JButton btnDaftar, btnImport, btnRefresh;
+    JButton btnDaftar, btnImport, btnRefresh, btnHapus;
     JTable tblPeserta;
     DefaultTableModel tableModel;
 
@@ -79,10 +79,18 @@ public class FrmPeserta extends JFrame {
         // Panel untuk tabel peserta
         JPanel tablePanel = new JPanel(new BorderLayout());
         
+        // Panel untuk tombol aksi
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        
         // Tombol refresh
         btnRefresh = new JButton("Refresh Data");
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.add(btnRefresh);
+        
+        // Tombol hapus
+        btnHapus = new JButton("Hapus Peserta");
+        btnHapus.setBackground(new Color(220, 20, 60));
+        btnHapus.setForeground(Color.WHITE);
+        buttonPanel.add(btnHapus);
         
         // Tabel peserta
         String[] columnNames = {"ID", "Nama Peserta", "Email", "No HP"};
@@ -130,6 +138,9 @@ public class FrmPeserta extends JFrame {
         
         // Tombol Refresh
         btnRefresh.addActionListener(e -> loadPesertaByEvent());
+        
+        // Tombol Hapus
+        btnHapus.addActionListener(e -> hapusPeserta());
         
         // Event saat memilih event
         cmbEvent.addActionListener(e -> loadPesertaByEvent());
@@ -185,6 +196,38 @@ public class FrmPeserta extends JFrame {
         // Isi tabel dengan data baru
         for (Object[] row : dataPeserta) {
             tableModel.addRow(row);
+        }
+    }
+    
+    // Method untuk menghapus peserta yang dipilih
+    void hapusPeserta() {
+        int selectedRow = tblPeserta.getSelectedRow();
+        
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Pilih peserta yang akan dihapus terlebih dahulu!");
+            return;
+        }
+        
+        int confirm = JOptionPane.showConfirmDialog(
+            this, 
+            "Apakah Anda yakin ingin menghapus peserta ini?",
+            "Konfirmasi Hapus",
+            JOptionPane.YES_NO_OPTION
+        );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                int pesertaId = (int) tblPeserta.getValueAt(selectedRow, 0);
+                
+                if (backend.hapusPeserta(pesertaId)) {
+                    JOptionPane.showMessageDialog(this, "Data peserta berhasil dihapus!");
+                    loadPesertaByEvent(); // Refresh tabel
+                } else {
+                    JOptionPane.showMessageDialog(this, "Gagal menghapus data peserta!");
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Terjadi kesalahan: " + e.getMessage());
+            }
         }
     }
     
