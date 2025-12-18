@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import javax.swing.JOptionPane;
 
 public class Koneksi {
-    private static final String URL = "jdbc:postgresql://localhost:5432/PBO_Event";
+    private static final String URL = "jdbc:postgresql://localhost:5432/cihuy";
     private static final String USER = "postgres";
     private static final String PASSWORD = "nanta";
     private static Connection koneksi = null;
