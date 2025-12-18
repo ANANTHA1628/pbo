@@ -24,7 +24,11 @@ public class FrmVenue extends JFrame {
     // --- Variabel Logika ---
     int selectedId = 0; // 0 artinya mode INSERT (Data Baru)
 
-    // Konstruktor: Menyiapkan GUI, layout, dan event listener
+    /**
+     * Konstruktor FrmVenue
+     * Deskripsi: Menginisialisasi komponen GUI, mengatur layout, dan menambahkan
+     * event listener.
+     */
     public FrmVenue() {
         setTitle("Form Kelola Venue");
         setSize(600, 500);
@@ -76,7 +80,14 @@ public class FrmVenue extends JFrame {
         pCenter.add(pSearch, BorderLayout.NORTH);
 
         // Event Listener untuk Live Search
+        // Event Listener untuk Live Search
         txtCari.addKeyListener(new KeyAdapter() {
+            /**
+             * Method keyReleased
+             * Deskripsi: Menangani event ketika tombol keyboard dilepas pada kolom
+             * pencarian.
+             * Memanggil method loadData() untuk memfilter data secara real-time.
+             */
             public void keyReleased(KeyEvent e) {
                 loadData();
             }
@@ -90,7 +101,14 @@ public class FrmVenue extends JFrame {
         add(pCenter, BorderLayout.CENTER);
 
         // Event saat baris tabel diklik
+        // Event saat baris tabel diklik
         table.addMouseListener(new MouseAdapter() {
+            /**
+             * Method mouseClicked
+             * Deskripsi: Menangani event klik mouse pada baris tabel.
+             * Mengambil data dari baris yang dipilih dan menampilkannya ke dalam form input
+             * untuk diedit.
+             */
             public void mouseClicked(MouseEvent e) {
                 int row = table.getSelectedRow();
                 selectedId = (int) model.getValueAt(row, 0);
@@ -103,7 +121,11 @@ public class FrmVenue extends JFrame {
         loadData();
     }
 
-    // Method untuk mengosongkan form input dan reset seleksi
+    /**
+     * Method kosongkan
+     * Deskripsi: Mereset semua input form menjadi kosong dan mengembalikan mode ke
+     * Insert (selectedId = 0).
+     */
     void kosongkan() {
         txtNama.setText("");
         txtAlamat.setText("");
@@ -111,7 +133,13 @@ public class FrmVenue extends JFrame {
         selectedId = 0; // Reset ke mode insert
     }
 
-    // Method untuk menyimpan data (Bisa INSERT atau UPDATE tergantung selectedId)
+    /**
+     * Method simpan
+     * Deskripsi: Menyimpan data venue ke database.
+     * Jika selectedId == 0, maka lakukan INSERT (Data Baru).
+     * Jika selectedId != 0, maka lakukan UPDATE (Data Lama).
+     * Melakukan validasi input kapasitas sebelum menyimpan.
+     */
     void simpan() {
         // Validasi input Kapasitas harus angka
         int kapasitas;
@@ -150,7 +178,11 @@ public class FrmVenue extends JFrame {
         }
     }
 
-    // Method untuk menghapus data yang dipilih (DELETE)
+    /**
+     * Method hapus
+     * Deskripsi: Menghapus data venue yang sedang dipilih dari database.
+     * Meminta konfirmasi pengguna sebelum melakukan penghapusan.
+     */
     void hapus() {
         if (selectedId == 0) {
             JOptionPane.showMessageDialog(this, "Pilih data yang akan dihapus!");
@@ -173,8 +205,11 @@ public class FrmVenue extends JFrame {
         }
     }
 
-    // Method untuk mengambil data dari database dan menampilkannya di tabel (READ)
-    // Mendukung pencarian berdasarkan nama atau alamat
+    /**
+     * Method loadData
+     * Deskripsi: Mengambil data venue dari database dan menampilkannya pada tabel.
+     * Mendukung fitur pencarian data berdasarkan nama event atau lokasi venue.
+     */
     void loadData() {
         model.setRowCount(0);
         String keyword = txtCari.getText(); // Ambil kata kunci pencarian

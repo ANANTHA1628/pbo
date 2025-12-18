@@ -21,6 +21,12 @@ public class FrmRekap extends JFrame {
     JSpinner spinMulai, spinAkhir;
     JCheckBox chkFilter;
 
+    /**
+     * Konstruktor FrmRekap
+     * Deskripsi: Menginisialisasi komponen GUI, layout, filter tanggal, tabel, dan
+     * event listener.
+     * Mengatur tampilan awal form rekapitulasi.
+     */
     public FrmRekap() {
         setTitle("Form Rekapitulasi Event");
         setSize(900, 550);
@@ -77,22 +83,32 @@ public class FrmRekap extends JFrame {
         // --- Event Listeners ---
 
         // Refresh: matikan filter dan load ulang
+        // Refresh: matikan filter dan load ulang
         btnRefresh.addActionListener(e -> {
+            // Reset filter dan muat ulang seluruh data
             chkFilter.setSelected(false);
             loadData();
         });
 
         // Tutup
+        // Tutup Form
         btnTutup.addActionListener(e -> dispose());
 
         // Filter: load data dengan filter aktif
+        // Filter: load data dengan filter aktif sesuai range tanggal
         btnFilter.addActionListener(e -> loadData());
 
         // Load Initial Data
         loadData();
     }
 
-    // Method Utama untuk Load Data dari DB
+    /**
+     * Method loadData
+     * Deskripsi: Mengambil data ringkasan event dari database.
+     * Menggunakan query JOIN dan SUBQUERY untuk menghitung jumlah peserta dan
+     * panitia per event.
+     * Mendukung filter data berdasarkan rentang tanggal jika checkbox diaktifkan.
+     */
     private void loadData() {
         model.setRowCount(0);
         try {
