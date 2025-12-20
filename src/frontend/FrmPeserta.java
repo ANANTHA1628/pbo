@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 /**
  * Class FrmPeserta
@@ -21,6 +24,7 @@ public class FrmPeserta extends JFrame {
     JButton btnDaftar, btnImport, btnRefresh, btnHapus;
     JTable tblPeserta;
     DefaultTableModel tableModel;
+    JPanel buttonPanel; // Deklarasi buttonPanel sebagai class field
 
     // --- Backend ---
     PesertaBackend backend;
@@ -80,7 +84,7 @@ public class FrmPeserta extends JFrame {
         JPanel tablePanel = new JPanel(new BorderLayout());
         
         // Panel untuk tombol aksi
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         
         // Tombol refresh
         btnRefresh = new JButton("Refresh Data");
@@ -91,6 +95,8 @@ public class FrmPeserta extends JFrame {
         btnHapus.setBackground(new Color(220, 20, 60));
         btnHapus.setForeground(Color.WHITE);
         buttonPanel.add(btnHapus);
+        
+        // Tombol download template
         
         // Tabel peserta
         String[] columnNames = {"ID", "Nama Peserta", "Email", "No HP"};
@@ -140,7 +146,19 @@ public class FrmPeserta extends JFrame {
         btnRefresh.addActionListener(e -> loadPesertaByEvent());
         
         // Tombol Hapus
-        btnHapus.addActionListener(e -> hapusPeserta());
+        btnHapus.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                hapusPeserta();
+            }
+        });
+        
+        // Tombol Download Template
+        JButton btnDownloadTemplate = new JButton("Download Template CSV");
+        btnDownloadTemplate.setBackground(new Color(30, 144, 255));
+        btnDownloadTemplate.setForeground(Color.WHITE);
+        buttonPanel.add(btnDownloadTemplate);
+        
+        btnDownloadTemplate.addActionListener(e -> downloadTemplateCSV());
         
         // Event saat memilih event
         cmbEvent.addActionListener(e -> loadPesertaByEvent());
@@ -199,8 +217,42 @@ public class FrmPeserta extends JFrame {
         }
     }
     
+    // Method untuk download template CSV
+    private void downloadTemplateCSV() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Simpan Template CSV");
+        fileChooser.setSelectedFile(new File("template_peserta.csv"));
+        
+        int userSelection = fileChooser.showSaveDialog(this);
+        
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToSave = fileChooser.getSelectedFile();
+            // Pastikan ekstensi .csv
+            if (!fileToSave.getName().toLowerCase().endsWith(".csv")) {
+                fileToSave = new File(fileToSave.getAbsolutePath() + ".csv");
+            }
+            
+            try (FileWriter writer = new FileWriter(fileToSave)) {
+                // Tulis header dan 1 contoh data
+                writer.write("Nama,Email,No HP\n");
+                writer.write("Contoh Peserta,contoh@email.com,081234567890\n");
+                
+                JOptionPane.showMessageDialog(this, 
+                    "Template berhasil disimpan di: " + fileToSave.getAbsolutePath(), 
+                    "Sukses", 
+                    JOptionPane.INFORMATION_MESSAGE);
+                    
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, 
+                    "Gagal menyimpan template: " + ex.getMessage(), 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    
     // Method untuk menghapus peserta yang dipilih
-    void hapusPeserta() {
+    private void hapusPeserta() {
         int selectedRow = tblPeserta.getSelectedRow();
         
         if (selectedRow == -1) {

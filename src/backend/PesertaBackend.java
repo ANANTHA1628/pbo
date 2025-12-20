@@ -6,15 +6,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
 
-/**
- * Class PesertaBackend
- * Deskripsi: Menangani pendaftaran peserta event.
- * Memiliki fitur Transaksi Database (Commit/Rollback) untuk menjamin data
- * konsisten:
- * 1. Simpan ke tabel 'peserta'
- * 2. Ambil ID peserta baru
- * 3. Simpan ke tabel relasi 'event_peserta'
- */
+
 public class PesertaBackend {
 
     // --- 1. PENDAFTARAN MANUAL ---
